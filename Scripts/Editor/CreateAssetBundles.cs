@@ -80,7 +80,7 @@ public class AssetBundleCreatorWindow : EditorWindow
         AssetDatabase.Refresh();
 
         // Build all asset bundles.
-        BuildPipeline.BuildAssetBundles("Assets/AssetBundles", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+        BuildPipeline.BuildAssetBundles("Assets/AssetlayerUnitySDK/AssetBundles", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
 
         // Output log
         UnityEngine.Debug.Log("AssetBundle Created: " + bundleName);
