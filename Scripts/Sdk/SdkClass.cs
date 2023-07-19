@@ -11,20 +11,8 @@ using UnityEngine.Networking;
 public class SDKClass
 {
     private const string API_URL = "https://api.assetlayer.com/api/v1/nft/info";
+    private const string APP_SECRET = "717b3ad702c58539f2e5e30f24cc0973";
     private const string HANDLE = "randomedge";
-
-    public string APP_SECRET
-    {
-        get
-        {
-#if UNITY_EDITOR
-            return SecretHolder.AppSecret;
-#else
-            return _appSecret; 
-#endif
-        }
-    }
-
 
     public IEnumerator GetExpression(string nftId, string expressionName, System.Action<string> callback)
     {
