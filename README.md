@@ -23,6 +23,7 @@ This repository contains a package for integrating AssetLayer inside a Unity App
 2. In Unity, create your first Collection by:
     - Selecting the prefab in the `ExamplePrefabs` folder.
     - Right-clicking on it, select `Create Assetlayer Collection`.
+    - Enter your slotId and preferred CollectionName, image if you have, then click Create Bundle.
 3. After the collection is created, you can go to your assets on `AssetLayer.com` and:
     - Lookup one of the `NftIds` on one of your NFTs that you just created.
     - Copy the `NftId` and open the `ExampleScene` in Unity.
