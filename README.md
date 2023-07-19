@@ -4,7 +4,7 @@ This repository contains a package for integrating AssetLayer inside a Unity App
 
 ## Installation
 
-1. [Download AssetlayerUnitySdk.unitypackage (Left Click then download)](https://github.com/unbounded-enterprise/assetlayer-unity/blob/2c24fb59e2423aaa6770cf5f255765883179182b/AssetlayerUnitySdk.unitypackage)
+1. [Download AssetlayerUnitySdk.unitypackage (Left Click then download)](https://github.com/unbounded-enterprise/assetlayer-unity/blob/main/AssetlayerUnitySdk.unitypackage))
 2. Import it in Unity:
     - Go to `Assets -> Import Package -> Custom Package`.
     - Select the downloaded `.unitypackage` file.
