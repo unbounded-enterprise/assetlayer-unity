@@ -4,7 +4,6 @@ using System.IO;
 using System;
 using System.Threading.Tasks;
 
-
 public class CreateAssetBundlesFromSelection
 {
     [MenuItem("Assets/Create Assetlayer Collection")]
@@ -23,6 +22,7 @@ public class AssetBundleCreatorWindow : EditorWindow
     int maxSupply = 100;
     Texture2D image;
     string successMessage = "";
+    const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
 
     private bool isCreatingCollection = false;
 
@@ -56,6 +56,13 @@ public class AssetBundleCreatorWindow : EditorWindow
     }
     async void CreateBundleFromSelection(string slotId, int maxSupply, string collectionName)
     {
+        // Ensure the bundle save path exists.
+        string fullPath = Path.Combine(Application.dataPath, BUNDLEPATH);
+        if (!Directory.Exists(fullPath))
+        {
+            Directory.CreateDirectory(fullPath);
+        }
+
         // Retrieve the currently selected assets.
         var selectedAssets = Selection.objects;
 
@@ -80,7 +87,7 @@ public class AssetBundleCreatorWindow : EditorWindow
         AssetDatabase.Refresh();
 
         // Build all asset bundles.
-        BuildPipeline.BuildAssetBundles("Assets/AssetlayerUnitySDK/AssetBundles", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+        BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
 
         // Output log
         UnityEngine.Debug.Log("AssetBundle Created: " + bundleName);
@@ -171,8 +178,11 @@ public class AssetBundleCreatorWindow : EditorWindow
 
     public string MoveAssetBundles(string bundleName)
     {
+        // Convert the relative bundle path to an absolute path
+        string absoluteBundlePath = Path.Combine(Application.dataPath, BUNDLEPATH);
+
         // Create a new directory for the bundle and its manifest.
-        string bundleDirectoryPath = Path.Combine("Assets/AssetBundles", bundleName + "_dir");
+        string bundleDirectoryPath = Path.Combine(absoluteBundlePath, bundleName + "_dir");
 
         // Check if directory exists, delete and recreate if it does.
         if (Directory.Exists(bundleDirectoryPath))
@@ -181,8 +191,8 @@ public class AssetBundleCreatorWindow : EditorWindow
         }
         Directory.CreateDirectory(bundleDirectoryPath);
 
-        string bundlePath = Path.Combine("Assets/AssetBundles", bundleName);
-        string bundleManifestPath = Path.Combine("Assets/AssetBundles", bundleName + ".manifest");
+        string bundlePath = Path.Combine(absoluteBundlePath, bundleName);
+        string bundleManifestPath = Path.Combine(absoluteBundlePath, bundleName + ".manifest");
         string targetBundlePath = Path.Combine(bundleDirectoryPath, bundleName + ".bundle");
         string targetBundleManifestPath = Path.Combine(bundleDirectoryPath, bundleName + ".bundle.manifest");
 
@@ -204,6 +214,7 @@ public class AssetBundleCreatorWindow : EditorWindow
 
         return targetBundlePath;
     }
+
 
 
     Texture2D MakeTextureReadable(Texture2D originalTexture)
