@@ -9,10 +9,11 @@ public class ReUploadExpressionValues : EditorWindow
     string collectionId = "";
     Texture2D image;
     string successMessage = "";
+    const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
 
     private bool isUploadingExpression = false;
 
-    [MenuItem("Assets/Re-upload Expression Values")]
+    [MenuItem("Assets/Assetlayer/Re-upload Expression Values")]
     static void ShowWindow()
     {
         // Show existing window instance. If one doesn't exist, make one.
@@ -48,6 +49,11 @@ public class ReUploadExpressionValues : EditorWindow
 
     async void CreateBundleAndUploadExpression(string collectionId)
     {
+
+        bool wasScene = Selection.activeObject is SceneAsset;
+        UnityEngine.Object selectedObject = Selection.activeObject;
+
+        
         // AssetBundling process
         var selectedAssets = Selection.objects;
         if (selectedAssets.Length == 0)
@@ -61,17 +67,52 @@ public class ReUploadExpressionValues : EditorWindow
             string assetPath = AssetDatabase.GetAssetPath(asset);
             AssetImporter.GetAtPath(assetPath).SetAssetBundleNameAndVariant(bundleName, "");
         }
-        AssetDatabase.Refresh();
-        BuildPipeline.BuildAssetBundles("Assets/AssetBundles", BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
-        UnityEngine.Debug.Log("AssetBundle Created: " + bundleName);
-
+        // Ensure the bundle save path exists.
+        string fullPath = Path.Combine(Application.dataPath, BUNDLEPATH);
+        if (!Directory.Exists(fullPath))
+        {
+            Directory.CreateDirectory(fullPath);
+        }
         string imageUrl = "";
+        try
+        {
+            BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Exception caught: " + e.ToString());
+        }
+        // If no image is selected and the first selected asset is a scene, capture a preview image
+        if (image == null && wasScene)
+        {
+            Debug.Log("goes here");
+            string scenePath = AssetDatabase.GetAssetPath(selectedObject);
+            string imagePath = ScenePreviewCapturer.CaptureScenePreview(scenePath, 120f);
+            Debug.Log("iamgePath: " + imagePath);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                byte[] bytes = File.ReadAllBytes(imagePath);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.filterMode = FilterMode.Bilinear;
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    Debug.Log("text: " + tex);
+                    image = tex;
+                }
+                else
+                {
+                    Debug.LogError("Failed to load image data into texture");
+                }
+            }
+        }
         if (image != null)
         {
             Texture2D readableImage = MakeTextureReadable(image);
             imageUrl = ImageToDataUrlResized(readableImage);
             UnityEngine.Debug.Log("Image Data URL: " + imageUrl);
         }
+        Debug.Log("imageurls2: " + imageUrl);
 
         SDKClass sdkInstance = new SDKClass();
 
@@ -103,7 +144,10 @@ public class ReUploadExpressionValues : EditorWindow
 
     public string MoveAssetBundles(string bundleName)
     {
-        string bundleDirectoryPath = Path.Combine("Assets/AssetBundles", bundleName + "_dir");
+        // Convert the relative bundle path to an absolute path
+        string absoluteBundlePath = Path.Combine(Application.dataPath, BUNDLEPATH);
+
+        string bundleDirectoryPath = Path.Combine(absoluteBundlePath, bundleName + "_dir");
 
         if (Directory.Exists(bundleDirectoryPath))
         {
@@ -111,8 +155,8 @@ public class ReUploadExpressionValues : EditorWindow
         }
         Directory.CreateDirectory(bundleDirectoryPath);
 
-        string bundlePath = Path.Combine("Assets/AssetBundles", bundleName);
-        string bundleManifestPath = Path.Combine("Assets/AssetBundles", bundleName + ".manifest");
+        string bundlePath = Path.Combine(absoluteBundlePath, bundleName);
+        string bundleManifestPath = Path.Combine(absoluteBundlePath, bundleName + ".manifest");
         string targetBundlePath = Path.Combine(bundleDirectoryPath, bundleName + ".bundle");
         string targetBundleManifestPath = Path.Combine(bundleDirectoryPath, bundleName + ".bundle.manifest");
 
@@ -134,6 +178,10 @@ public class ReUploadExpressionValues : EditorWindow
 
     Texture2D MakeTextureReadable(Texture2D originalTexture)
     {
+        if (originalTexture.isReadable)
+        {
+            return originalTexture;
+        }
         RenderTexture renderTexture = RenderTexture.GetTemporary(
             originalTexture.width,
             originalTexture.height,

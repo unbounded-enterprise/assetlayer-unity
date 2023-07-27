@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 public class CreateAssetBundlesFromSelection
 {
-    [MenuItem("Assets/Create Assetlayer Collection")]
+    [MenuItem("Assets/Assetlayer/Create Assetlayer Collection")]
 
     static void ShowWindow()
     {
@@ -56,6 +56,9 @@ public class AssetBundleCreatorWindow : EditorWindow
     }
     async void CreateBundleFromSelection(string slotId, int maxSupply, string collectionName)
     {
+
+        bool wasScene = Selection.activeObject is SceneAsset;
+        UnityEngine.Object selectedObject = Selection.activeObject;
         // Ensure the bundle save path exists.
         string fullPath = Path.Combine(Application.dataPath, BUNDLEPATH);
         if (!Directory.Exists(fullPath))
@@ -92,12 +95,34 @@ public class AssetBundleCreatorWindow : EditorWindow
         // Output log
         UnityEngine.Debug.Log("AssetBundle Created: " + bundleName);
         string imageUrl = "";
+
+        // If no image is selected and the first selected asset is a scene, capture a preview image
+        if (image == null && wasScene) 
+        {
+            string scenePath = AssetDatabase.GetAssetPath(selectedObject);
+            string imagePath = ScenePreviewCapturer.CaptureScenePreview(scenePath, 120f);
+            if (!string.IsNullOrEmpty(imagePath))
+            {
+                byte[] bytes = File.ReadAllBytes(imagePath);
+                Texture2D tex = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                if (tex.LoadImage(bytes))
+                {
+                    tex.filterMode = FilterMode.Bilinear;
+                    tex.wrapMode = TextureWrapMode.Clamp;
+                    image = tex;
+                }
+                else
+                {
+                    Debug.LogError("Failed to load image data into texture");
+                }
+            }
+        }
         // If an image is selected, convert it to a data URL and print it to the console.
         if (image != null)
         {
             Texture2D readableImage = MakeTextureReadable(image);
             imageUrl = ImageToDataUrlResized(readableImage);
-            UnityEngine.Debug.Log("Image Data URL: " + imageUrl);
+            Debug.Log("Image Data URL: " + imageUrl);
         }
 
         SDKClass sdkInstance = new SDKClass();
