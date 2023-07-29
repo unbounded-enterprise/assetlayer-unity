@@ -19,20 +19,4 @@ public static class UtilityFunctions
 
         return null;
     }
-
-    // Method to load asset bundle
-    public static async Task<AssetBundle> LoadAssetBundle(string bundleUrl)
-    {
-        UnityWebRequest uwr = UnityWebRequestAssetBundle.GetAssetBundle(bundleUrl);
-        await uwr.SendWebRequest();
-
-        if (uwr.result != UnityWebRequest.Result.Success)
-        {
-            Debug.LogError("Failed to load AssetBundle: " + uwr.error);
-            return null;
-        }
-
-        AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
-        return bundle;
-    }
 }

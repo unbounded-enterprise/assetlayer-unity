@@ -134,6 +134,7 @@ GameObject:
   - component: {fileID: 167550553}
   - component: {fileID: 167550552}
   - component: {fileID: 167550551}
+  - component: {fileID: 167550557}
   m_Layer: 0
   m_Name: Cube
   m_TagString: Untagged
@@ -473,6 +474,20 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &167550557
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 167550550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad911a3c9e49be744b055eb15dfdfabf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  SlotId: 64af61ace69d03294d92fc0b
+  Handle: randomedge
 --- !u!1 &706592554
 GameObject:
   m_ObjectHideFlags: 0
@@ -502,7 +517,7 @@ Light:
   m_Type: 1
   m_Shape: 0
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
-  m_Intensity: 1
+  m_Intensity: 0.1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -573,7 +588,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh-81670
+  m_Name: pb_Mesh73614
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2

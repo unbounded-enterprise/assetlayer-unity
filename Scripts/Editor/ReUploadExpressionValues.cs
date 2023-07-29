@@ -10,6 +10,8 @@ public class ReUploadExpressionValues : EditorWindow
     Texture2D image;
     string successMessage = "";
     const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
+    float fieldOfView = 120f;
+    float fieldOfViewPrefab = 30f;
 
     private bool isUploadingExpression = false;
 
@@ -51,6 +53,7 @@ public class ReUploadExpressionValues : EditorWindow
     {
 
         bool wasScene = Selection.activeObject is SceneAsset;
+        bool wasPrefab = Selection.activeObject is GameObject;
         UnityEngine.Object selectedObject = Selection.activeObject;
 
         
@@ -82,13 +85,21 @@ public class ReUploadExpressionValues : EditorWindow
         {
             Debug.LogError("Exception caught: " + e.ToString());
         }
-        // If no image is selected and the first selected asset is a scene, capture a preview image
-        if (image == null && wasScene)
+        // If no image is selected and the first selected asset is a scene or a prefab, capture a preview image
+        if (image == null && (wasScene || wasPrefab))
         {
-            Debug.Log("goes here");
-            string scenePath = AssetDatabase.GetAssetPath(selectedObject);
-            string imagePath = ScenePreviewCapturer.CaptureScenePreview(scenePath, 120f);
-            Debug.Log("iamgePath: " + imagePath);
+            string assetPath = AssetDatabase.GetAssetPath(selectedObject);
+            string imagePath = "";
+
+            if (wasScene)
+            {
+                imagePath = ScenePreviewCapturer.CaptureScenePreview(assetPath, fieldOfView);
+            }
+            else if (wasPrefab)
+            {
+                imagePath = await PrefabPreviewCapturer.CapturePrefabPreview(assetPath, fieldOfViewPrefab);
+            }
+
             if (!string.IsNullOrEmpty(imagePath))
             {
                 byte[] bytes = File.ReadAllBytes(imagePath);
@@ -97,7 +108,6 @@ public class ReUploadExpressionValues : EditorWindow
                 {
                     tex.filterMode = FilterMode.Bilinear;
                     tex.wrapMode = TextureWrapMode.Clamp;
-                    Debug.Log("text: " + tex);
                     image = tex;
                 }
                 else

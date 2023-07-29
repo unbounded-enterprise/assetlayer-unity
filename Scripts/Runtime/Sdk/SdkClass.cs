@@ -1,3 +1,4 @@
+using JetBrains.Annotations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -541,43 +542,6 @@ public class SDKClass
         }
     }
 
-
-    [Serializable]
-public class ExpressionAttribute
-    {
-        public string expressionAttributeName;
-    }
-
-    [Serializable]
-    public class ExpressionValue
-    {
-        public ExpressionAttribute expressionAttribute;
-        public string value;
-    }
-
-    [Serializable]
-    public class Nft
-    {
-        public string nftId;
-        public int serial;
-        public List<ExpressionValue> expressionValues;
-        public string collectionId;
-    }
-
-    [Serializable]
-    public class NftResponseBody
-    {
-        public List<Nft> nfts;
-    }
-
-    [Serializable]
-    public class NftResponse
-    {
-        public int statusCode;
-        public bool success;
-        public NftResponseBody body;
-    }
-
     public async Task<List<Nft>> GetNftBalance(string slotId, string handle, bool idOnly, bool countsOnly)
     {
         string url = $"https://api.assetlayer.com/api/v1/nft/slot?slotId={slotId}&handle={handle}&idOnly={idOnly.ToString().ToLower()}&countsOnly={countsOnly.ToString().ToLower()}";
@@ -611,4 +575,48 @@ public class ExpressionAttribute
             return null;
         }
     }
+}
+
+[Serializable]
+public class ExpressionAttribute
+{
+    public string expressionAttributeName;
+}
+
+[Serializable]
+public class Expression
+{
+    public string expressionName;
+    public string expressionId;
+}
+
+[Serializable]
+public class ExpressionValue
+{
+    public ExpressionAttribute expressionAttribute;
+    public Expression expression;
+    public string value;
+}
+
+[Serializable]
+public class Nft
+{
+    public string nftId;
+    public int serial;
+    public List<ExpressionValue> expressionValues;
+    public string collectionId;
+}
+
+[Serializable]
+public class NftResponseBody
+{
+    public List<Nft> nfts;
+}
+
+[Serializable]
+public class NftResponse
+{
+    public int statusCode;
+    public bool success;
+    public NftResponseBody body;
 }
