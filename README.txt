@@ -14,8 +14,8 @@ This repository contains a package for integrating AssetLayer inside a Unity App
 1. Create a `.env` file inside of your home directory.
     - In Windows, this would be `C:\Users\<username>\.env`.
 2. Open the `.env` file in a text editor and enter two variables: 
-    - `APP_SECRET = Your_Assetlayer_Appsecret`
-    - `ASSETLAYER_APP_ID = Your_Assetlayer_AppId`
+    APP_SECRET = Your_Assetlayer_Appsecret
+    ASSETLAYER_APP_ID = Your_Assetlayer_AppId
 
 ## Usage
 
