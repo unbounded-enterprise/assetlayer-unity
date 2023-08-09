@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using static SDKClass.AppInfoResponse.Body.App;
 
 public class SDKClass
 {
@@ -22,7 +23,7 @@ public class SDKClass
 #if UNITY_EDITOR
             return SecretHolder.AppSecret;
 #else
-            return "not available"; 
+            return "717b3ad702c58539f2e5e30f24cc0973"; 
 #endif
         }
     }
@@ -542,9 +543,9 @@ public class SDKClass
         }
     }
 
-    public async Task<List<Nft>> GetNftBalance(string slotId, string handle, bool idOnly, bool countsOnly)
+    public async Task<List<Nft>> GetNftBalance(string slotId, bool idOnly, bool countsOnly)
     {
-        string url = $"https://api.assetlayer.com/api/v1/nft/slot?slotId={slotId}&handle={handle}&idOnly={idOnly.ToString().ToLower()}&countsOnly={countsOnly.ToString().ToLower()}";
+        string url = $"https://api.assetlayer.com/api/v1/nft/slot?slotId={slotId}&handle={HANDLE}&idOnly={idOnly.ToString().ToLower()}&countsOnly={countsOnly.ToString().ToLower()}";
 
         UnityWebRequest request = UnityWebRequest.Get(url);
         request.SetRequestHeader("Content-Type", "application/json");
@@ -575,12 +576,69 @@ public class SDKClass
             return null;
         }
     }
+
+    public async Task<string[]> GetAppSlots()
+    {
+#if UNITY_EDITOR
+        string appId = SecretHolder.AssetlayerAppId;
+#else
+        string appId = "64af6101e69d03294d92f0f0";
+#endif
+
+        string url = $"https://api.assetlayer.com/api/v1/app/info?appId={appId}";
+
+        UnityWebRequest request = UnityWebRequest.Get(url);
+        request.SetRequestHeader("Content-Type", "application/json");
+        request.SetRequestHeader("appsecret", APP_SECRET);
+
+        await request.SendWebRequest();
+
+        if (request.isNetworkError || request.isHttpError)
+        {
+            Debug.LogError(request.error);
+            return null;
+        }
+        else
+        {
+            Debug.Log("GetAppSlots response: " + request.downloadHandler.text);
+            AppInfoResponse response = JsonUtility.FromJson<AppInfoResponse>(request.downloadHandler.text);
+            if (response.success && response.body.app != null)
+            {
+                return response.body.app.slots;
+            }
+
+            Debug.LogError("No slots found");
+            return null;
+        }
+    }
+
+
+    [Serializable]
+    public class AppInfoResponse
+    {
+        public int statusCode;
+        public bool success;
+        public Body body;
+
+        [System.Serializable]
+        public class Body
+        {
+            public App app;
+
+            [System.Serializable]
+            public class App
+            {
+                public string[] slots;
+            }
+        }
+    }
 }
 
 [Serializable]
 public class ExpressionAttribute
 {
     public string expressionAttributeName;
+    public string expressionAttributeId;
 }
 
 [Serializable]
@@ -605,6 +663,7 @@ public class Nft
     public int serial;
     public List<ExpressionValue> expressionValues;
     public string collectionId;
+    public string collectionName;
 }
 
 [Serializable]
@@ -620,3 +679,4 @@ public class NftResponse
     public bool success;
     public NftResponseBody body;
 }
+

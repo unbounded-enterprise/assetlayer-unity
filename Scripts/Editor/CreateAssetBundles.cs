@@ -3,6 +3,7 @@ using UnityEngine;
 using System.IO;
 using System;
 using System.Threading.Tasks;
+using System.Linq;
 
 public class CreateAssetBundlesFromSelection
 {
@@ -17,7 +18,7 @@ public class CreateAssetBundlesFromSelection
 
 public class AssetBundleCreatorWindow : EditorWindow
 {
-    string slotId = "64af61ace69d03294d92fc0b";
+    string slotId = "";
     string collectionName = "MyPrefabCollection";
     int maxSupply = 100;
     Texture2D image;
@@ -25,8 +26,17 @@ public class AssetBundleCreatorWindow : EditorWindow
     const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
     float fieldOfView = 120f;
     float fieldOfViewPrefab = 30f;
+    string[] slotIds;
+    int slotIndex = 0;
 
     private bool isCreatingCollection = false;
+
+    async void OnEnable()
+    {
+        SDKClass sdkInstance = new SDKClass();
+        slotIds = await sdkInstance.GetAppSlots();
+    }
+
 
     void OnGUI()
     {
@@ -44,7 +54,13 @@ public class AssetBundleCreatorWindow : EditorWindow
         else
         {
             GUILayout.Label("Create Asset Bundle", EditorStyles.boldLabel);
-            slotId = EditorGUILayout.TextField("Slot ID", slotId);
+
+            if (slotIds != null)
+            {
+                slotIndex = EditorGUILayout.Popup("Slot ID", slotIndex, slotIds);
+                slotId = slotIds[slotIndex];
+            }
+
             collectionName = EditorGUILayout.TextField("Collection Name", collectionName);
             maxSupply = EditorGUILayout.IntField("Max Supply", maxSupply);
             image = (Texture2D)EditorGUILayout.ObjectField("Image", image, typeof(Texture2D), false);

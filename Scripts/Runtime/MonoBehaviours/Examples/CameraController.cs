@@ -12,7 +12,8 @@ public class CameraController : MonoBehaviour
     private float currentZoom;
     public float groundLevel = 0.0f; // Set this to your ground level
 
-    float mouseX, mouseY;
+    private float mouseX, mouseY;
+    private bool IsCameraControlActive = true;
 
     void Start()
     {
@@ -33,7 +34,7 @@ public class CameraController : MonoBehaviour
     void LateUpdate()
     {
         // Only proceed if the player object is assigned
-        if (player != null)
+        if (player != null && IsCameraControlActive)
         {
             // Only update camera rotation when right mouse button is pressed
             if (Input.GetMouseButton(1))
@@ -43,7 +44,6 @@ public class CameraController : MonoBehaviour
                 mouseY = Mathf.Clamp(mouseY, -35, 60);
 
                 transform.LookAt(player.transform);
-                // player.transform.rotation = Quaternion.Euler(0, mouseX, 0);
                 transform.rotation = Quaternion.Euler(mouseY, mouseX, 0);
             }
 
@@ -60,6 +60,34 @@ public class CameraController : MonoBehaviour
             }
 
             transform.position = newPosition;
+        }
+    }
+
+    private void OnEnable()
+    {
+        InventoryUIManager.OnInventoryToggled += HandleInventoryToggled;
+    }
+
+    private void OnDisable()
+    {
+        InventoryUIManager.OnInventoryToggled -= HandleInventoryToggled;
+    }
+
+    private void HandleInventoryToggled(bool isInventoryOpened)
+    {
+        if (isInventoryOpened)
+        {
+            // Make cursor visible and unlocked when the inventory is opened
+            Cursor.visible = true;
+            Cursor.lockState = CursorLockMode.None;
+            IsCameraControlActive = false;
+        }
+        else
+        {
+            // Hide and lock the cursor when the inventory is closed
+            Cursor.visible = false;
+            Cursor.lockState = CursorLockMode.Locked;
+            IsCameraControlActive = true;
         }
     }
 }

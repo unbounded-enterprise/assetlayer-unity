@@ -131,7 +131,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh-4580
+  m_Name: pb_Mesh90158
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2
@@ -3473,7 +3473,8 @@ MonoBehaviour:
   defaultMaterial: {fileID: 2100000, guid: de3cf961c6d481f48874535f856be421, type: 2}
   nearMaterial: {fileID: 2100000, guid: 04c67275821c5294b968334b36506e2f, type: 2}
   enterMaterial: {fileID: 2100000, guid: 3f23540ac9b76f043accb9325dbcbd7a, type: 2}
-  NftIdToLoad: 309efdc5fd4c88ff04c283fcc616e7db
+  NftIdToLoad: 
+  SceneNameToLoad: Inventory
 --- !u!65 &304854642
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -12940,7 +12941,7 @@ Mesh:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: pb_Mesh-5272
+  m_Name: pb_Mesh90206
   serializedVersion: 11
   m_SubMeshes:
   - serializedVersion: 2
