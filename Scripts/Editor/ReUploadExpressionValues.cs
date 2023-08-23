@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 using System;
+using Assetlayer.UnitySDK;
 using System.Threading.Tasks;
 
 public class ReUploadExpressionValues : EditorWindow
@@ -49,7 +50,7 @@ public class ReUploadExpressionValues : EditorWindow
         }
     }
 
-    async void CreateBundleAndUploadExpression(string collectionId)
+    async Task CreateBundleAndUploadExpression(string collectionId)
     {
 
         bool wasScene = Selection.activeObject is SceneAsset;
@@ -77,14 +78,7 @@ public class ReUploadExpressionValues : EditorWindow
             Directory.CreateDirectory(fullPath);
         }
         string imageUrl = "";
-        try
-        {
-            BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
-        }
-        catch (Exception e)
-        {
-            Debug.LogError("Exception caught: " + e.ToString());
-        }
+        
         // If no image is selected and the first selected asset is a scene or a prefab, capture a preview image
         if (image == null && (wasScene || wasPrefab))
         {
@@ -125,11 +119,41 @@ public class ReUploadExpressionValues : EditorWindow
         Debug.Log("imageurls2: " + imageUrl);
 
         SDKClass sdkInstance = new SDKClass();
+        bool uploadSuccess = false;
+        try
+        {
+            BuildTarget[] platforms =
+            {
+                BuildTarget.iOS,
+                BuildTarget.Android,
+                BuildTarget.StandaloneWindows,
+                BuildTarget.StandaloneOSX,
+                BuildTarget.WebGL
+            };
+            
+            foreach (BuildTarget platform in platforms)
+            {
+                // Build the asset bundles for the current platform
+                BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.ChunkBasedCompression, platform);
 
-        string bundlePath = MoveAssetBundles(bundleName);
-        string dataUrl = BundleToDataUrl(bundlePath);
-        Debug.Log("dataUrl: " + dataUrl.Length);
-        bool uploadSuccess = await sdkInstance.UploadBundleExpression(collectionId, dataUrl, "AssetBundle", "AssetBundle");
+                // Move and get the dataUrl for the bundle
+                string bundlePath = MoveAssetBundles(bundleName);
+                string dataUrl = BundleToDataUrl(bundlePath);
+
+                // Upload the AssetBundle for the current platform using the SDK.
+                uploadSuccess = await sdkInstance.UploadBundleExpression(collectionId, dataUrl, "AssetBundle" + platform.ToString(), "AssetBundle");
+
+                if (!uploadSuccess)
+                {
+                    Debug.LogError($"Failed to upload AssetBundle for platform {platform}.");
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            Debug.LogError("Exception caught: " + e.ToString());
+        }
+
         bool uploadSuccessMenuView = await sdkInstance.UploadBundleExpression(collectionId, imageUrl, "Image", "Menu View");
 
         if (uploadSuccess)

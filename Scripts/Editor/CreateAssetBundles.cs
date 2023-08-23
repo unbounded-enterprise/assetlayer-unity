@@ -2,7 +2,9 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 using System;
+using Assetlayer.UnitySDK;
 using System.Threading.Tasks;
+using static Assetlayer.UnitySDK.SDKClass;
 
 public class CreateAssetBundlesFromSelection
 {
@@ -17,16 +19,37 @@ public class CreateAssetBundlesFromSelection
 
 public class AssetBundleCreatorWindow : EditorWindow
 {
-    string slotId = "64af61ace69d03294d92fc0b";
+    string slotId = "";
     string collectionName = "MyPrefabCollection";
+    string[] slotNames;
     int maxSupply = 100;
     Texture2D image;
     string successMessage = "";
     const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
     float fieldOfView = 120f;
     float fieldOfViewPrefab = 30f;
+    string[] slotIds;
+    int slotIndex = 0;
 
     private bool isCreatingCollection = false;
+
+    async void OnEnable()
+    {
+        SDKClass sdkInstance = new SDKClass();
+        slotIds = await sdkInstance.GetAppSlots();
+
+        // Fetch slot names for each slotId
+        slotNames = new string[slotIds.Length];
+        for (int i = 0; i < slotIds.Length; i++)
+        {
+            var slotInfo = await sdkInstance.GetSlotInfo(slotIds[i]);
+            if (slotInfo != null && slotInfo.slotName != null)
+            {
+                slotNames[i] = slotInfo.slotName;
+            }
+        }
+    }
+
 
     void OnGUI()
     {
@@ -44,7 +67,13 @@ public class AssetBundleCreatorWindow : EditorWindow
         else
         {
             GUILayout.Label("Create Asset Bundle", EditorStyles.boldLabel);
-            slotId = EditorGUILayout.TextField("Slot ID", slotId);
+
+            if (slotNames != null) // Change from slotIds to slotNames
+            {
+                slotIndex = EditorGUILayout.Popup("Slot Name", slotIndex, slotNames);
+                slotId = slotIds[slotIndex];
+            }
+
             collectionName = EditorGUILayout.TextField("Collection Name", collectionName);
             maxSupply = EditorGUILayout.IntField("Max Supply", maxSupply);
             image = (Texture2D)EditorGUILayout.ObjectField("Image", image, typeof(Texture2D), false);
@@ -56,7 +85,27 @@ public class AssetBundleCreatorWindow : EditorWindow
             }
         }
     }
-    async void CreateBundleFromSelection(string slotId, int maxSupply, string collectionName)
+
+    BuildTarget GetBuildTarget(BuildPlatform platform)
+    {
+        switch (platform)
+        {
+            case BuildPlatform.iOS:
+                return BuildTarget.iOS;
+            case BuildPlatform.Android:
+                return BuildTarget.Android;
+            case BuildPlatform.StandaloneWindows:
+                return BuildTarget.StandaloneWindows64; // Or StandaloneWindows depending on your needs.
+            case BuildPlatform.StandaloneOSX:
+                return BuildTarget.StandaloneOSX;
+            case BuildPlatform.WebGL:
+                return BuildTarget.WebGL;
+            default:
+                throw new ArgumentException("Invalid platform specified.");
+        }
+    }
+
+    async Task CreateBundleFromSelection(string slotId, int maxSupply, string collectionName)
     {
         bool wasScene = Selection.activeObject is SceneAsset;
         bool wasPrefab = Selection.activeObject is GameObject;
@@ -90,9 +139,10 @@ public class AssetBundleCreatorWindow : EditorWindow
 
         // Refresh the AssetDatabase after setting the asset bundle names.
         AssetDatabase.Refresh();
+        SDKClass sdkInstance = new SDKClass();
 
-        // Build all asset bundles.
-        BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.None, BuildTarget.StandaloneWindows);
+        
+
 
         // Output log
         UnityEngine.Debug.Log("AssetBundle Created: " + bundleName);
@@ -137,7 +187,7 @@ public class AssetBundleCreatorWindow : EditorWindow
             Debug.Log("Image Data URL: " + imageUrl);
         }
 
-        SDKClass sdkInstance = new SDKClass();
+        
         string collectionId = await sdkInstance.CreateCollection(slotId, collectionName, maxSupply, imageUrl);
         if (collectionId != null)
         {
@@ -150,7 +200,7 @@ public class AssetBundleCreatorWindow : EditorWindow
                 // If no existing expression found, create a new one
                 string expressionTypeId = "64b1ce76716b83c3de7df84e";
                 string expressionName = "AssetBundle";
-                expressionId = await sdkInstance.CreateExpression(slotId, expressionTypeId, expressionName);
+                expressionId = await sdkInstance.CreateExpression(slotId, expressionTypeId, expressionName, "Assetbundle Expression");
 
                 if (string.IsNullOrEmpty(expressionId))
                 {
@@ -159,42 +209,41 @@ public class AssetBundleCreatorWindow : EditorWindow
                 }
             }
 
-            string bundlePath = MoveAssetBundles(bundleName);
+            foreach (BuildPlatform platform in Enum.GetValues(typeof(BuildPlatform)))
+            {
+                BuildTarget buildTarget = GetBuildTarget(platform);
+                BuildPipeline.BuildAssetBundles(fullPath, BuildAssetBundleOptions.ChunkBasedCompression, buildTarget);
 
-            // Convert the AssetBundle to a Data URL.
-            string dataUrl = BundleToDataUrl(bundlePath);
 
-            Debug.Log("dataUrl: " + dataUrl.Length);
+                string platformName = platform.ToString();
+                // Move and get the dataUrl for the bundle
+                string bundlePath = MoveAssetBundles(bundleName);
+                string dataUrl = BundleToDataUrl(bundlePath);
+                await sdkInstance.UploadBundleExpression(collectionId, dataUrl, "AssetBundle" + platformName, "AssetBundle");
+
+            }
+
 
             string menuViewExpressionId = await sdkInstance.GetMenuViewExpression(slotId);
 
             bool menuViewSuccess = await sdkInstance.UploadBundleExpression(collectionId, imageUrl, "Image", "Menu View");
 
-            // Upload the AssetBundle using the SDK.
-            bool uploadSuccess = await sdkInstance.UploadBundleExpression(collectionId, dataUrl);
 
-            if (uploadSuccess)
+
+            // Call MintNFT function after the upload.
+            bool mintSuccess = await sdkInstance.Mint(collectionId, 10);  // Replace MintNFT with the actual function name from your SDK.
+
+            if (mintSuccess)
             {
-                Debug.Log("AssetBundle uploaded successfully!");
-
-                // Call MintNFT function after the upload.
-                bool mintSuccess = await sdkInstance.Mint(collectionId, 10);  // Replace MintNFT with the actual function name from your SDK.
-
-                if (mintSuccess)
-                {
-                    Debug.Log("NFT Minted successfully!");
-                    successMessage = "Collection and AssetBundle created and uploaded successfully!";
-                    Repaint();
-                }
-                else
-                {
-                    Debug.Log("Failed to mint NFT.");
-                }
+                Debug.Log("NFT Minted successfully!");
+                successMessage = "Collection and AssetBundle created and uploaded successfully!";
+                Repaint();
             }
             else
             {
-                Debug.Log("Failed to upload AssetBundle.");
+                Debug.Log("Failed to mint NFT.");
             }
+           
         }
         else
         {

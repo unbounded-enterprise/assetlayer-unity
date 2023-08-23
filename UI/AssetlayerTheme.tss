@@ -1,0 +1,6 @@
+:root {
+    --primary-color: rgba(24, 24, 24, 0.75);
+    --secondary-color: rgba(143, 143, 143, 1);
+}
+VisualElement {
+}

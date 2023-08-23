@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using UnityEditor;
+using UnityEngine;
 
 // This class is used to hold sensitive data for your project when it's open in Unity Editor. 
 // It should not be used to hold sensitive data for your built game.
@@ -13,6 +14,8 @@ public static class SecretHolder
     // These variables hold the secret app key and asset layer app ID
     public static string AppSecret;
     public static string AssetlayerAppId;
+    public static string DidToken;
+    public static string UserDidToken;
 
     // This static constructor is called once when the scripts are loaded or the game starts in the editor.
     static SecretHolder()
@@ -33,12 +36,16 @@ public static class SecretHolder
                 foreach (string line in lines)
                 {
                     // Split the line into key and value at the equals sign
-                    string[] parts = line.Split('=');
+                    string[] parts = line.Split(new char[] { '=' }, 2); // values might contain = as well
+
                     // If the line correctly splits into a key and value
+                    Debug.Log("line: " + line + "parts: " + parts[0] + ":" + parts[1]);
                     if (parts.Length == 2)
                     {
+                
                         string key = parts[0].Trim();
                         string value = parts[1].Trim();
+                        Debug.Log("key" + key);
 
                         // If the key matches "APP_SECRET", store the value in the AppSecret variable
                         if (key == "APP_SECRET")
@@ -49,6 +56,11 @@ public static class SecretHolder
                         else if (key == "ASSETLAYER_APP_ID")
                         {
                             AssetlayerAppId = value;
+                        } 
+                        else if(key == "DID_TOKEN")
+                        {
+                            DidToken = value;
+                            Debug.Log("didtoken readd" + value);
                         }
                     }
                 }

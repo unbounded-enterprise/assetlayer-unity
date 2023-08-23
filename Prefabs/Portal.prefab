@@ -706,6 +706,65 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!1 &663079644439762403
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2975762362183695219}
+  - component: {fileID: 3850402851129356062}
+  - component: {fileID: 8308509401174263467}
+  m_Layer: 0
+  m_Name: SceneImporter
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2975762362183695219
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663079644439762403}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7775591248185924680}
+  m_RootOrder: -1
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &3850402851129356062
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663079644439762403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6cd889e89d2295849acc2ae3c39a7767, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  defaultNftId: 
+  loadingSceneName: LoadingScene
+--- !u!114 &8308509401174263467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 663079644439762403}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8833b4b0c87264b47ae508d9e8066018, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &6527167376007245966
 GameObject:
   m_ObjectHideFlags: 0
@@ -743,8 +802,9 @@ Transform:
   - {fileID: 2953897027810802155}
   - {fileID: 968665500120839691}
   - {fileID: 6255490122983632061}
+  - {fileID: 2975762362183695219}
   m_Father: {fileID: 0}
-  m_RootOrder: 6
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 180.873, z: 0}
 --- !u!114 &3706469095382971527
 MonoBehaviour:
@@ -1970,6 +2030,7 @@ GameObject:
   - component: {fileID: 1381766005774985246}
   - component: {fileID: 2071500217041848882}
   - component: {fileID: 380229244901305595}
+  - component: {fileID: 1480454770727787264}
   m_Layer: 0
   m_Name: collider
   m_TagString: Untagged
@@ -2029,6 +2090,8 @@ MonoBehaviour:
   nearMaterial: {fileID: 2100000, guid: 04c67275821c5294b968334b36506e2f, type: 2}
   enterMaterial: {fileID: 2100000, guid: 3f23540ac9b76f043accb9325dbcbd7a, type: 2}
   NftIdToLoad: 
+  SceneNameToLoad: 
+  sceneImporter: {fileID: 3850402851129356062}
 --- !u!65 &380229244901305595
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -2050,3 +2113,30 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 2, z: 2}
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &1480454770727787264
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8854074903365450306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832677f42891ce64497d3fadeee12ca9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  onAssetSelectedInEditor:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 3850402851129356062}
+        m_TargetAssemblyTypeName: SceneImporter, Assembly-CSharp
+        m_MethodName: SetSceneAsset
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2

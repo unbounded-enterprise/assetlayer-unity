@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class PortalProximity : MonoBehaviour
 {
@@ -8,7 +9,11 @@ public class PortalProximity : MonoBehaviour
     public Material nearMaterial;
     public Material enterMaterial;
     private MeshRenderer meshRenderer; // Cache the MeshRenderer
-    public string NftIdToLoad; 
+    public string NftIdToLoad;
+    public string SceneNameToLoad;
+
+    [SerializeField]
+    private SceneImporter sceneImporter;
 
     void Start()
     {
@@ -40,11 +45,21 @@ public class PortalProximity : MonoBehaviour
         if (collision.collider.CompareTag("Player"))
         {
             meshRenderer.material = enterMaterial;
-            if (NftIdToLoad != "")
+
+            // Check if SceneNameToLoad is specified, otherwise use the NftIdToLoad
+            if (!string.IsNullOrEmpty(SceneNameToLoad))
             {
-                SceneImporter.Instance.SetNftId(NftIdToLoad);
+                SceneManager.LoadScene(SceneNameToLoad);
             }
-            SceneImporter.Instance.LoadScene();
+            else 
+            {
+                if (!string.IsNullOrEmpty(NftIdToLoad)) {
+                    sceneImporter.SetAssetId(NftIdToLoad);
+                    
+                }
+                sceneImporter.LoadScene();
+
+            }
         }
     }
 

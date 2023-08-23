@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class SpherePlayerController : MonoBehaviour
@@ -15,6 +16,12 @@ public class SpherePlayerController : MonoBehaviour
     private bool isGrounded; // Whether or not the player is currently grounded.
     private Rigidbody rb;
     private Camera mainCamera;
+
+    private Vector2 touchStartPos; // To store the start position of touch
+    private bool isDragging = false; // To check if the user is dragging the touch
+
+    public Vector3 lastPlayerDirection;
+
 
     void Start()
     {
@@ -70,6 +77,33 @@ public class SpherePlayerController : MonoBehaviour
                 jumpSound.Play(); // Play jump sound.
             }
         }
+
+        // Mobile Jumping
+        if (Input.touchCount > 0)
+        {
+            Touch touch = Input.GetTouch(0);
+
+            // Start touch
+            if (touch.phase == TouchPhase.Began)
+            {
+                touchStartPos = touch.position;
+            }
+            // End touch
+            else if (touch.phase == TouchPhase.Ended && isDragging)
+            {
+                isDragging = false;
+                rb.AddForce(new Vector3(0, jumpForce, 0), ForceMode.Impulse);
+                if (jumpSound != null)
+                {
+                    jumpSound.Play();
+                }
+            }
+            // Drag touch
+            else if (touch.phase == TouchPhase.Moved)
+            {
+                isDragging = true;
+            }
+        }
     }
 
     void FixedUpdate()
@@ -78,6 +112,10 @@ public class SpherePlayerController : MonoBehaviour
         if (mainCamera == null)
         {
             mainCamera = Camera.main;
+        }
+        if (mainCamera == null)
+        {
+            return;
         }
 
         float moveHorizontal = Input.GetAxis("Horizontal");
@@ -96,6 +134,31 @@ public class SpherePlayerController : MonoBehaviour
         if (movement.magnitude < 0.01f)
         {
             rb.velocity = rb.velocity * deceleration;
+        }
+
+        // Mobile Controls
+        if (isDragging)
+        {
+            Vector2 touchDelta = (Vector2)Input.GetTouch(0).position - touchStartPos;
+            float mobileMult = 3f;
+            moveHorizontal = mobileMult *  touchDelta.x / Screen.width; // Normalize to range [-1,1]
+            moveVertical = mobileMult * touchDelta.y / Screen.height;  // Normalize to range [-1,1]
+
+            movement = new Vector3(moveHorizontal, 0.0f, moveVertical);
+            movement = mainCamera.transform.TransformDirection(movement);
+            movement.y = 0f;
+            // Record the last direction of movement
+            
+
+            rb.AddForce(movement * moveSpeed * 10);
+
+        }
+        lastPlayerDirection = movement.normalized;
+        if (lastPlayerDirection != Vector3.zero) // Ensure the player has moved
+        {
+            float cameraFollowSpeed = 0.66f; // Adjust this to control the speed at which the camera follows
+            Quaternion targetRotation = Quaternion.LookRotation(lastPlayerDirection);
+            mainCamera.transform.rotation = Quaternion.Slerp(mainCamera.transform.rotation, targetRotation, Time.deltaTime * cameraFollowSpeed);
         }
     }
 }

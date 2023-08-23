@@ -1,0 +1,33 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:Template name="AssetCard" src="project://database/Assets/AssetlayerUnitySDK/UI/AssetCard.uxml?fileID=9197481963319205126&amp;guid=0047a92a9a4908d4c85397a5946d0058&amp;type=3#AssetCard" />
+    <Style src="project://database/Assets/AssetlayerUnitySDK/UI/Styles/AssetlayerInventory.uss?fileID=7433441132597879392&amp;guid=339e1b79515b6af4dacecc2571323cc5&amp;type=3#AssetlayerInventory" />
+    <ui:VisualElement name="AssetlayerInventory" class="InventoryPadding">
+        <ui:VisualElement name="InventoryParent" class="InventoryParent">
+            <ui:Label tabindex="-1" text="Inventory" display-tooltip-when-elided="true" name="InventoryHeader" class="InventoryHeader" />
+            <ui:TextField picking-mode="Ignore" value="Search" name="InventoryTextField" class="InventorySearch">
+                <ui:VisualElement name="SearchIcon" class="SearchIcon" />
+            </ui:TextField>
+            <ui:ScrollView scroll-deceleration-rate="0,135" elasticity="0,1" horizontal-page-size="-1" vertical-page-size="-1" name="InventoryScrollview" horizontal-scroller-visibility="Hidden" vertical-scroller-visibility="Hidden" class="InventoryScrollview">
+                <ui:VisualElement name="InventoryContainer" class="InventoryContainer">
+                    <ui:Instance template="AssetCard" name="AssetCard" />
+                    <ui:VisualElement name="NftCard" class="NftCard" style="background-color: rgba(238, 238, 238, 0);">
+                        <ui:VisualElement name="MenuViewImage" class="MenuViewImage">
+                            <ui:Label tabindex="-1" text="3" display-tooltip-when-elided="true" name="NftCount" class="NftCount" />
+                        </ui:VisualElement>
+                        <ui:Label tabindex="-1" text="MyCollection" display-tooltip-when-elided="true" name="CollectionName" class="CollectionName" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="NftCard" class="NftCard" style="background-color: rgba(238, 238, 238, 0);">
+                        <ui:VisualElement name="MenuViewImage" class="MenuViewImage">
+                            <ui:Label tabindex="-1" text="3" display-tooltip-when-elided="true" name="NftCount" class="NftCount" />
+                        </ui:VisualElement>
+                        <ui:Label tabindex="-1" text="MyCollection" display-tooltip-when-elided="true" name="CollectionName" class="CollectionName" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:ScrollView>
+            <ui:Button display-tooltip-when-elided="true" name="InventoryCloseButton" class="CloseButton">
+                <ui:VisualElement name="CloseButtonIcon" class="CloseButtonIcon" />
+            </ui:Button>
+            <ui:Button text="Back" display-tooltip-when-elided="true" name="InventoryBackButton" class="BackButton" style="align-self: center;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>
