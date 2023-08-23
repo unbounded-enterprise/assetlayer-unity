@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 4933284287494009445}
   - component: {fileID: 7013886743949257389}
   - component: {fileID: 1900586401856256180}
+  - component: {fileID: 8979696210291005119}
   m_Layer: 0
   m_Name: InventoryUI
   m_TagString: Untagged
@@ -46,7 +47,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62de0dfd937ba9a428b4a2d0127d8c9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  nftCardTemplate: {fileID: 9197481963319205126, guid: 2c6e9bd5d74e3fa49b0adaeccf83989c, type: 3}
+  onAssetSelection:
+    m_PersistentCalls:
+      m_Calls: []
+  slotId: 
+  assetExpressionId: 
 --- !u!114 &7013886743949257389
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -75,4 +80,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d3611dc9c306c8b4a9ea1213da417cb8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  selectedCollectionId: 
+  AssetlayerGameObjectToSwitchOnChange: {fileID: 0}
+  selectedAssetId: 
+--- !u!114 &8979696210291005119
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5233384751895321862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 25fcd5331659bec4f9d88ae48d395462, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AssetCardTemplate: {fileID: 9197481963319205126, guid: 0047a92a9a4908d4c85397a5946d0058, type: 3}
+  toggleButtonUXML: {fileID: 0}

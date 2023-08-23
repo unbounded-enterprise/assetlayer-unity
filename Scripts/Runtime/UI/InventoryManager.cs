@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
+using Assetlayer.UnitySDK;
+using static Assetlayer.UtilityFunctions.UtilityFunctions;
 
 public class InventoryManager : MonoBehaviour
 {
@@ -8,8 +10,7 @@ public class InventoryManager : MonoBehaviour
 
     private Asset selectedAsset;
 
-    public GameObject characterToDeleteOnChange;
-    public GameObject parentOfCharacter;
+    public GameObject AssetlayerGameObjectToSwitchOnChange;
 
     [SerializeField]
     private string selectedAssetId; 
@@ -37,8 +38,12 @@ public class InventoryManager : MonoBehaviour
         Debug.Log("ManagerAssetChange");
         selectedAsset = asset;
         selectedAssetId = asset.assetId;
-        string assetBundleUrl = UtilityFunctions.GetExpressionValue(asset.expressionValues, "AssetBundle");
-        StartCoroutine(DownloadAndInstantiateAssetBundle(assetBundleUrl));
+        string assetBundleUrl = GetExpressionValueAssetBundle(asset.expressionValues, "AssetBundle");
+        // StartCoroutine(DownloadAndInstantiateAssetBundle(assetBundleUrl));
+        if (AssetlayerGameObjectToSwitchOnChange != null)
+        {
+            AssetlayerGameObjectToSwitchOnChange.GetComponent<AssetBundleImporter>()?.SetNftId(asset.assetId);
+        }
 
     }
 
@@ -58,12 +63,8 @@ public class InventoryManager : MonoBehaviour
                 var prefabName = bundle.GetAllAssetNames()[0];  // Assumes there's only one object in the bundle
                 var prefab = bundle.LoadAsset<GameObject>(prefabName);
 
-                GameObject instance = Instantiate(prefab, parentOfCharacter.transform);
-                // Delete the characterToDeleteOnChange
-                if (characterToDeleteOnChange != null)
-                {
-                    Destroy(characterToDeleteOnChange);
-                }
+                AssetBundleImporter.SwitchOutGameObject(AssetlayerGameObjectToSwitchOnChange, prefab);
+                
 
             }
         }

@@ -12,9 +12,9 @@ GameObject:
   - component: {fileID: 8877092399044423875}
   - component: {fileID: 1183911830472570702}
   - component: {fileID: 1499004272339654753}
-  - component: {fileID: 1863440301282911816}
   - component: {fileID: 2525093877924078739}
   - component: {fileID: -5726384607073058235}
+  - component: {fileID: 5990644260004648222}
   m_Layer: 0
   m_Name: coin
   m_TagString: Untagged
@@ -35,7 +35,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 8
+  m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8877092399044423875
 MeshFilter:
@@ -100,20 +100,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotationSpeed: 100
---- !u!114 &1863440301282911816
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 979750982533943642}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 31225f28fd1bfbe41a99d5e6ba3d2393, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  pickupSound: {fileID: 8300000, guid: cd681468d564534418fe9f3c70836720, type: 3}
-  audioSource: {fileID: -5726384607073058235}
 --- !u!136 &2525093877924078739
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -233,3 +219,15 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &5990644260004648222
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 979750982533943642}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e3355fce38e0904da4bd374329580be, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

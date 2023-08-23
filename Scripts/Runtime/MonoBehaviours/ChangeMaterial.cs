@@ -1,6 +1,7 @@
 using UnityEngine.Networking;
 using UnityEngine;
 using System.Collections;
+using Assetlayer.UnitySDK;
 
 public class ChangeMaterial : MonoBehaviour
 {

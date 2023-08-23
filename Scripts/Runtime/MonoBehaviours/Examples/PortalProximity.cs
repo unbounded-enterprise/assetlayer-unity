@@ -12,6 +12,9 @@ public class PortalProximity : MonoBehaviour
     public string NftIdToLoad;
     public string SceneNameToLoad;
 
+    [SerializeField]
+    private SceneImporter sceneImporter;
+
     void Start()
     {
         meshRenderer = GetComponentInParent<MeshRenderer>(); // Get the MeshRenderer from the parent
@@ -48,10 +51,14 @@ public class PortalProximity : MonoBehaviour
             {
                 SceneManager.LoadScene(SceneNameToLoad);
             }
-            else if (!string.IsNullOrEmpty(NftIdToLoad))
+            else 
             {
-                SceneImporter.Instance.SetNftId(NftIdToLoad);
-                SceneImporter.Instance.LoadScene();
+                if (!string.IsNullOrEmpty(NftIdToLoad)) {
+                    sceneImporter.SetAssetId(NftIdToLoad);
+                    
+                }
+                sceneImporter.LoadScene();
+
             }
         }
     }

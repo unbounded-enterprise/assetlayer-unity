@@ -1,21 +1,26 @@
+using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using Assetlayer.Inventory;
+using System.Threading.Tasks;
+using PimDeWitte.UnityMainThreadDispatcher;
 
-public class InventoryUIManager
+public class InventoryUIManager : MonoBehaviour
 {
+    private UIDocument uiDocument;
+
+    public VisualTreeAsset AssetCardTemplate;
+
     private VisualElement inventoryUI;
     private VisualElement inventoryContainer;
-    private VisualTreeAsset nftCardTemplate;
+
+    public GameObject YourUI;
+    public string toggleElementName;
+    private VisualElement toggleElement;
 
     public delegate void UISelectionHandler(UIAsset selectedUIAsset);
-
     public event UISelectionHandler UIAssetSelected;
-
-    public static event System.Action<Collection> CollectionSelected;
 
     public static event System.Action<bool> OnInventoryToggled;
 
@@ -28,21 +33,50 @@ public class InventoryUIManager
     public delegate void UICloseHandler();
     public event UICloseHandler UICloseInitiated;
 
+    private ImageDownloaderManager imageDownloader;
 
-
-    public InventoryUIManager(UIDocument uiDocument, VisualTreeAsset template)
+    private void Awake()
     {
+        imageDownloader = GetComponent<ImageDownloaderManager>();
+        InitializeUI();
+        
+    }
+
+    private void InitializeUI()
+    {
+        uiDocument = GetComponent<UIDocument>();
         var root = uiDocument.rootVisualElement;
         inventoryUI = root.Q<VisualElement>(UIElementsNames.AssetlayerInventory);
         inventoryContainer = root.Q<VisualElement>(UIElementsNames.InventoryContainer);
-        nftCardTemplate = template;
         inventoryUI.style.display = DisplayStyle.None;
+
+        if (YourUI != null)
+        {
+            UIDocument otherUIDocument = YourUI.GetComponent<UIDocument>();
+            if (otherUIDocument != null)
+            {
+                var rootYourUI = otherUIDocument.rootVisualElement;
+                toggleElement = rootYourUI.Q<VisualElement>(toggleElementName);
+
+                if (toggleElement != null)
+                {
+                    toggleElement.RegisterCallback<ClickEvent>(evt => ToggleInventoryUI());
+                }
+                else
+                {
+                    Debug.LogError($"VisualElement with name {toggleElementName} not found!");
+                }
+            }
+            else
+            {
+                Debug.LogError("Provided GameObject does not have a UIDocument component!");
+            }
+        }
 
         // Register the event callbacks
         RegisterSearchCallback();
         RegisterCloseCallback();
         RegisterBackCallback();
-
     }
 
     public void RegisterSearchCallback()
@@ -74,29 +108,61 @@ public class InventoryUIManager
 
     public void DisplayUIAssets(IEnumerable<UIAsset> uiAssets)
     {
-        inventoryContainer.Clear();
-
+        Debug.Log("DisplayUIAssets: " + uiAssets.ToString());
+        if (inventoryContainer.childCount > 0)
+        {
+            inventoryContainer.Clear();
+        }
+        Debug.Log("After clear");
         foreach (var uiAsset in uiAssets)
         {
-            var clonedTree = nftCardTemplate.CloneTree();
+            DownloadAndDisplayAssetImage(uiAsset);
+        }
+    }
+
+    private async Task DownloadAndDisplayAssetImage(UIAsset uiAsset)
+    {
+        if (uiAsset == null)
+        {
+            return;
+        }
+        
+        Texture2D textureOnMainThread = await LoadImageAsync(uiAsset.ImageURL);
+
+        UnityMainThreadDispatcher.Instance().Enqueue(() =>
+        {
+            Debug.Log("for each asset: " + uiAsset);
+            var clonedTree = AssetCardTemplate.CloneTree();
             var nftCard = clonedTree.Q<VisualElement>(UIElementsNames.NftCard);
-
-            // Note: Adjust this callback if you want different behaviors based on asset type
+            Debug.Log("for each asset:2 " + uiAsset);
             nftCard.RegisterCallback<ClickEvent>(evt => UIAssetSelected.Invoke(uiAsset));
-
+            Debug.Log("for each asset:3 " + uiAsset);
             var assetNameLabel = nftCard.Q<Label>(UIElementsNames.CollectionName);
             var assetImage = nftCard.Q<VisualElement>(UIElementsNames.MenuViewImage);
             var assetCountLabel = nftCard.Q<Label>(UIElementsNames.NftCount);
-
+            Debug.Log("for each asset:4 " + uiAsset);
             assetNameLabel.text = uiAsset.Name;
             assetCountLabel.text = (uiAsset.AssetType == UIAssetType.Asset ? "#" : "") + uiAsset.CountOrSerial.ToString();
-
-            Texture2D texture = ImageLoader.LoadImage(uiAsset.ImageURL);
-            assetImage.style.backgroundImage = new StyleBackground(texture);
-
+            Debug.Log("Before image load: " + uiAsset.ImageURL);
+            Debug.Log("After load" + textureOnMainThread);
+            assetImage.style.backgroundImage = new StyleBackground(textureOnMainThread);
             inventoryContainer.Add(nftCard);
-        }
+        });
     }
+
+    public Task<Texture2D> LoadImageAsync(string imageUrl)
+    {
+        var tcs = new TaskCompletionSource<Texture2D>();
+
+        imageDownloader.LoadImage(imageUrl, result =>
+        {
+            tcs.SetResult(result);
+        });
+
+        return tcs.Task;
+    }
+
+
 
 
     public void ToggleInventoryUI()
@@ -117,6 +183,7 @@ public class InventoryUIManager
     public void HideInventoryUI()
     {
         inventoryUI.style.display = DisplayStyle.None;
+        OnInventoryToggled?.Invoke(false);
     }
 
     public void UpdateInventoryTitle(string newTitle)

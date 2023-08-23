@@ -203,18 +203,7 @@
     border-bottom-width: 1px;
     -unity-font-style: bold;
     -unity-text-align: upper-center;
-}
-
-.BackButton {
-    background-color: rgb(36, 36, 36);
-    color: rgb(255, 255, 255);
-    border-width: 1px;
-    border-color: rgb(143, 143, 143);
-    width: 169px;
-    font-size: 12px;
-    -unity-font-style: bold;
-    margin-top: 12px;
-    margin-bottom: 12px;
+    -unity-font-definition: url('project://database/Assets/TextMesh%20Pro/Examples%20&%20Extras/Fonts/Roboto-Bold.ttf?fileID=12800000&guid=4beb055f07aaff244873dec698d0363e&type=3#Roboto-Bold');
 }
 
 .BackButton:hover {
@@ -307,4 +296,75 @@
     padding-right: 0;
     padding-top: 0;
     padding-bottom: 0;
+}
+
+.BackButton {
+    background-color: rgb(36, 36, 36);
+    color: rgb(255, 255, 255);
+    border-width: 1px;
+    border-color: rgb(143, 143, 143);
+    width: 169px;
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-top: 12px;
+    margin-bottom: 12px;
+    -unity-font-definition: url('project://database/Assets/TextMesh%20Pro/Examples%20&%20Extras/Fonts/Roboto-Bold.ttf?fileID=12800000&guid=4beb055f07aaff244873dec698d0363e&type=3#Roboto-Bold');
+}
+
+.InventoryToggleButton {
+    width: auto;
+    min-width: 100px;
+    min-height: 100px;
+    max-width: 10%;
+    max-height: 10%;
+    flex-grow: 1;
+    flex-direction: column;
+    background-image: url('project://database/Assets/AssetlayerUnitySDK/UI/ExampleImages/ExamplePotion.png?fileID=2800000&guid=0df59791751055348aa27e29230d8fe1&type=3#ExamplePotion');
+    -unity-text-align: lower-center;
+    font-size: 9%;
+    color: rgb(255, 255, 255);
+    -unity-font-definition: url('project://database/Assets/TextMesh%20Pro/Examples%20&%20Extras/Fonts/Roboto-Bold.ttf?fileID=12800000&guid=4beb055f07aaff244873dec698d0363e&type=3#Roboto-Bold');
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(23, 23, 23, 0);
+    background-color: rgba(23, 23, 23, 0.53);
+    justify-content: space-between;
+    align-items: flex-end;
+    position: absolute;
+    right: 3%;
+    top: 3%;
+}
+
+.InventoryToggleButton:hover {
+    width: auto;
+    min-width: 100px;
+    min-height: 100px;
+    max-width: 10%;
+    max-height: 10%;
+    flex-grow: 1;
+    flex-direction: column;
+    background-image: url('project://database/Assets/AssetlayerUnitySDK/UI/ExampleImages/ExamplePotion.png?fileID=2800000&guid=0df59791751055348aa27e29230d8fe1&type=3#ExamplePotion');
+    -unity-text-align: lower-center;
+    font-size: 9%;
+    color: rgb(255, 255, 255);
+    -unity-font-definition: url('project://database/Assets/TextMesh%20Pro/Examples%20&%20Extras/Fonts/Roboto-Bold.ttf?fileID=12800000&guid=4beb055f07aaff244873dec698d0363e&type=3#Roboto-Bold');
+    -unity-text-outline-width: 1px;
+    -unity-text-outline-color: rgba(23, 23, 23, 0);
+    background-color: rgba(23, 23, 23, 0.84);
+    justify-content: space-between;
+    align-items: flex-end;
+    position: absolute;
+    right: 3%;
+    top: 3%;
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-top-left-radius: 1px;
+    border-bottom-left-radius: 1px;
+    border-top-right-radius: 1px;
+    border-bottom-right-radius: 1px;
+    padding-left: 3px;
+    padding-right: 3px;
+    padding-top: 3px;
+    padding-bottom: 3px;
 }

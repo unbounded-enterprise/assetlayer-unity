@@ -29,3 +29,8 @@ This repository contains a package for integrating AssetLayer inside a Unity App
     - Copy the `NftId` and open the `ExampleScene` in Unity.
     - Enter the `NftId` in the `AssetBundleImporter` component.
 4. You are now ready to start the scene and see your created NFT displayed.
+
+## Additional Steps
+
+1. For the Login for your users to work, you need to run a server, you can checkout or run this: https://github.com/unbounded-enterprise/sample-app
+

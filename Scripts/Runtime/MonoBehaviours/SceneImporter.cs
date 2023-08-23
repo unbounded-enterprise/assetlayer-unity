@@ -1,32 +1,27 @@
-using System.IO;
+  using System.IO;
 using UnityEngine;
-using UnityEngine.Networking;
 using System.Collections;
 using System;
 using UnityEngine.SceneManagement;
-
+using UnityEngine.EventSystems;
+using Assetlayer.UnitySDK;
 public class SceneImporter : MonoBehaviour
 {
-    public static SceneImporter Instance { get; private set; } // Singleton instance
 
     private SDKClass sdk;
-    public string NftId { get; private set; }
-    public string defaultNftId;
+    public string AssetId { get; private set; }
+    public string defaultAssetId;
+    private Asset loadedSceneAsset;
     private string bundleDirectory;
     public string loadingSceneName = "LoadingScene"; // the name of your loading scene
+
+    private AssetBundleDownloader bundleDownloader;
 
     // Initialize the Singleton in the Awake function
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject); // Ensures that the instance isn't destroyed between scenes
-        }
-        else
-        {
-            Destroy(gameObject);
-        }
+        DontDestroyOnLoad(gameObject); // Ensures that the instance isn't destroyed between scenes
+        bundleDownloader = GetComponent<AssetBundleDownloader>();
     }
 
     private void Initialize()
@@ -38,96 +33,128 @@ public class SceneImporter : MonoBehaviour
         Debug.Log(userProfilePath);
     }
 
+
     private void Start()
     {
-        if (defaultNftId != "")
+        if (defaultAssetId != "")
         {
-            SetNftId(defaultNftId);
+            SetAssetId(defaultAssetId);
         }
+
+        
     }
 
-    public void SetNftId(string newNftId)
+    public void SetAssetId(string newAssetId)
     {
-        this.NftId = newNftId;
+        
+        this.AssetId = newAssetId;
+        if (this.loadedSceneAsset?.assetId != newAssetId)
+        {
+            this.loadedSceneAsset = null;
+        }
         Initialize();
+        
+    }
+
+
+    public void SetSceneAsset(Asset asset)
+    {
+        Debug.Log("Loaded bundle before vent" + asset.loadedAssetBundle);
+        if (asset == null || asset.loadedAssetBundle == null)
+        {
+            return;
+        }
+        if (asset.loadedAssetBundle.isStreamedSceneAssetBundle)
+        {
+            Debug.Log("New Scene Selected");
+            this.loadedSceneAsset = asset;
+            this.AssetId = asset.assetId;
+        }
     }
 
     public void LoadScene()
     {
-        if (NftId == null || NftId == "")
+        if (string.IsNullOrEmpty(this.AssetId) && (this.loadedSceneAsset == null || string.IsNullOrEmpty(this.loadedSceneAsset.assetId)))
+        {
+            return;
+        }
+        bool alreadyLoaded = this.loadedSceneAsset?.assetId == this.AssetId;
+
+        if (alreadyLoaded)
+        {
+            Debug.Log("Asset already loaded");
+            StartCoroutine(LoadLoadingScene());
+            HandleLoadedBundle(this.loadedSceneAsset.loadedAssetBundle);
+            return;
+        }
+        if (AssetId == null || AssetId == "")
         {
             Debug.LogError("No NftId has been set. Can't load the scene.");
             return;
         }
-        LoadLoadingScene();
+        StartCoroutine(LoadLoadingScene());
         StartProcess();
     }
 
     private void StartProcess()
     {
-        StartCoroutine(sdk.GetExpression(NftId, "AssetBundle", ApplyScene));
+        StartCoroutine(sdk.GetExpression(AssetId, "AssetBundle", ApplyScene));
     }
 
     private void ApplyScene(string bundleUrl)
     {
         Debug.Log("downloadlink: " + bundleUrl);
-        StartCoroutine(DownloadAndLoadBundle(bundleUrl, bundleDirectory));
+        bundleDownloader.DownloadAndLoadBundle(bundleUrl, HandleLoadedBundle);
     }
 
-    private IEnumerator DownloadAndLoadBundle(string bundleUrl, string directoryPath)
-    {
-        Debug.Log($"Starting to download AssetBundle from: {bundleUrl}");
+    private void HandleLoadedBundle(AssetBundle bundle)
+    {         
+                var scenePath = bundle.GetAllScenePaths()[0];  // get the path of the first scene in the bundle
+                StartCoroutine(LoadSceneFromBundle(scenePath));
 
-        using (UnityWebRequest uwr = UnityWebRequestAssetBundle.GetAssetBundle(bundleUrl))
-        {
-            yield return uwr.SendWebRequest();
-
-            if (uwr.result != UnityWebRequest.Result.Success)
-            {
-                Debug.LogError($"Failed to download AssetBundle: {uwr.error}");
-            }
-            else
-            {
-                Debug.Log("Successfully downloaded AssetBundle");
-
-                // Get downloaded asset bundle
-                AssetBundle bundle = DownloadHandlerAssetBundle.GetContent(uwr);
-                if (bundle != null)
-                {
-                    Debug.Log("Successfully loaded AssetBundle");
-
-                    // Load the scene from the bundle
-                    var scenePath = bundle.GetAllScenePaths()[0];  // get the path of the first scene in the bundle
-                    yield return StartCoroutine(LoadSceneFromBundle(scenePath));
-
-                    bundle.Unload(false);
-                }
-                else
-                {
-                    Debug.LogError($"Asset bundle not found at {bundleUrl}");
-                }
-            }
-            UnloadLoadingScene();
-        }
+                bundle.Unload(false);  
     }
 
     private IEnumerator LoadSceneFromBundle(string scenePath)
     {
-        var asyncLoad = SceneManager.LoadSceneAsync(scenePath, LoadSceneMode.Single);
+        string sceneName = System.IO.Path.GetFileNameWithoutExtension(scenePath);
+        var asyncLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
 
         while (!asyncLoad.isDone)
         {
             yield return null;
         }
+        EnsureSingleEventSystem();
     }
 
-    private void LoadLoadingScene()
+    private IEnumerator LoadLoadingScene()
     {
-        SceneManager.LoadScene(loadingSceneName, LoadSceneMode.Additive);
+        var asyncLoad = SceneManager.LoadSceneAsync(loadingSceneName, LoadSceneMode.Additive);
+
+        while (!asyncLoad.isDone)
+        {
+            yield return null;
+        }
+
+        EnsureSingleEventSystem();
     }
 
     private void UnloadLoadingScene()
     {
         SceneManager.UnloadSceneAsync(loadingSceneName);
+    }
+
+    private void EnsureSingleEventSystem()
+    {
+        EventSystem[] eventSystems = FindObjectsOfType<EventSystem>();
+
+        if (eventSystems.Length > 1)
+        {
+            // Destroy all but the first EventSystem.
+            for (int i = 1; i < eventSystems.Length; i++)
+            {
+                Destroy(eventSystems[i].gameObject);
+            }
+        }
     }
 }

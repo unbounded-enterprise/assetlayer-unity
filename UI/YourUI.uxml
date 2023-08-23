@@ -1,0 +1,4 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <Style src="project://database/Assets/AssetlayerUnitySDK/UI/Styles/AssetlayerInventory.uss?fileID=7433441132597879392&amp;guid=339e1b79515b6af4dacecc2571323cc5&amp;type=3#AssetlayerInventory" />
+    <ui:VisualElement name="ToggleButton" class="InventoryToggleButton" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0);" />
+</ui:UXML>

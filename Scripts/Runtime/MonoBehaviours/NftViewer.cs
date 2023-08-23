@@ -1,10 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
+using Assetlayer.UnitySDK;
 
 public class NftViewer : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class NftViewer : MonoBehaviour
     public Material plattformMaterial;
 
 
-    private List<Nft> validNfts;  //  We store the list of valid NFTs.
+    private List<Asset> validAssets;  //  We store the list of valid NFTs.
     private int selectedNftIndex = 0; //  The index of the currently selected NFT.
     private Dictionary<int, GameObject> loadedNfts = new Dictionary<int, GameObject>();
 
@@ -51,7 +51,7 @@ public class NftViewer : MonoBehaviour
 
     private void Update()
     {
-        if (validNfts == null)
+        if (validAssets == null)
         {
             return;
         }
@@ -77,9 +77,9 @@ public class NftViewer : MonoBehaviour
             StopCoroutine(cameraAnimationCoroutine);
         }
         DestroyLights();
-        Debug.Log("nfts count: " + validNfts.Count + validNfts);
-        selectedNftIndex = (selectedNftIndex + 1) % validNfts.Count;
-        DisplayNft(validNfts[selectedNftIndex]);
+        Debug.Log("nfts count: " + validAssets.Count + validAssets);
+        selectedNftIndex = (selectedNftIndex + 1) % validAssets.Count;
+        DisplayNft(validAssets[selectedNftIndex]);
     }
 
     private void SelectPreviousNft() 
@@ -96,9 +96,9 @@ public class NftViewer : MonoBehaviour
         selectedNftIndex--;
         if (selectedNftIndex < 0)
         {
-            selectedNftIndex = validNfts.Count - 1;
+            selectedNftIndex = validAssets.Count - 1;
         }
-        DisplayNft(validNfts[selectedNftIndex]);
+        DisplayNft(validAssets[selectedNftIndex]);
     }
 
     private GameObject CreatePlatformCube()
@@ -126,19 +126,19 @@ public class NftViewer : MonoBehaviour
     }
 
 
-    private async Task<List<Nft>> FetchNfts()
+    private async Task<List<Asset>> FetchNfts()
     {
         SDKClass sdk = new SDKClass();
-        return await sdk.GetNftBalance(SlotId, false, false);
+        return await sdk.GetAssetBalance(SlotId, false, false);   
     }
 
-    private void DisplayFirstValidNft(List<Nft> nfts)
+    private void DisplayFirstValidNft(List<Asset> assets)
     {
-        validNfts = FilterValidNfts(nfts);  // We store the list of valid NFTs.
+        validAssets = FilterValidNfts(assets);  // We store the list of valid NFTs.
 
-        if (validNfts.Count > 0)
+        if (validAssets.Count > 0)
         {
-            DisplayNft(validNfts[0]); 
+            DisplayNft(validAssets[0]); 
         }
         else
         {
@@ -146,9 +146,9 @@ public class NftViewer : MonoBehaviour
         }
     }
 
-    private void DisplayNft(Nft nft)
+    private void DisplayNft(Asset asset)
     {
-        Debug.Log("Display NFT: " + nft + nft.nftId);
+        Debug.Log("Display NFT: " + asset + asset.assetId);
 
         // If the NFT has already been loaded, move the camera to it instead of loading it again
         if (loadedNfts.ContainsKey(selectedNftIndex))
@@ -160,9 +160,9 @@ public class NftViewer : MonoBehaviour
             return;
         }
 
-        string imageUrl = GetExpressionValue(nft, MenuViewAttributeName);
+        string imageUrl = GetExpressionValue(asset, MenuViewAttributeName);
 
-        string assetBundleUrl = GetExpressionValueByAttributeId(nft, AssetBundleAttributeId);
+        string assetBundleUrl = GetExpressionValueByAttributeId(asset, AssetBundleAttributeId);
         if (assetBundleUrl != null)
         {
             StartCoroutine(DownloadDisplayImageThenInstantiateAssetBundle(imageUrl, assetBundleUrl));
@@ -265,10 +265,10 @@ public class NftViewer : MonoBehaviour
 
 
 
-    private List<Nft> FilterValidNfts(List<Nft> nfts)
+    private List<Asset> FilterValidNfts(List<Asset> assets)
     {
-        return nfts
-            .GroupBy(nft => GetExpressionValue(nft, MenuViewAttributeName))
+        return assets
+            .GroupBy(asset => GetExpressionValue(asset, MenuViewAttributeName))
             .Where(g => IsValidImageExtension(g.Key))
             .Select(g => g.First())
             .ToList();
@@ -281,16 +281,16 @@ public class NftViewer : MonoBehaviour
                (expressionValue.EndsWith(".png") || expressionValue.EndsWith(".jpg"));
     }
 
-    private string GetExpressionValue(Nft nft, string attributeName)
+    private string GetExpressionValue(Asset asset, string attributeName)
     {
-        var expressionValue = nft.expressionValues
+        var expressionValue = asset.expressionValues
                              .FirstOrDefault(ev => ev.expression.expressionName == attributeName);
         return expressionValue?.value;
     }
 
-    private string GetExpressionValueByAttributeId(Nft nft, string attributeId)
+    private string GetExpressionValueByAttributeId(Asset asset, string attributeId)
     {
-        var expressionValue = nft.expressionValues
+        var expressionValue = asset.expressionValues
                              .FirstOrDefault(ev => ev.expressionAttribute.expressionAttributeId == attributeId);
         return expressionValue?.value;
     }
