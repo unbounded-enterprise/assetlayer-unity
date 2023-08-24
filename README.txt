@@ -16,6 +16,9 @@ This repository contains a package for integrating AssetLayer inside a Unity App
 2. Open the `.env` file in a text editor and enter two variables: 
     APP_SECRET = Your_Assetlayer_Appsecret
     ASSETLAYER_APP_ID = Your_Assetlayer_AppId
+    DID_TOKEN= Your DID_TOKEN (for testing in editor without login and using editor tools)
+    HANDLE = Your Asset Layer Handle, in the current build this needs to be changed in code in the SdkClass.cs (scripts -> Runtime -> Sdk ) and will be changed in the next build to use this handle instead.
+    
 
 ## Usage
 
