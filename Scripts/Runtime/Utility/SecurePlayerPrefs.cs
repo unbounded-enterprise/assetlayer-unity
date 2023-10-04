@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace Assetlayer.UtilityFunctions
+namespace AssetLayer.Unity
 {
 
     public static class SecurePlayerPrefs

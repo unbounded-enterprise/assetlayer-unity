@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using System.Net;
 using System;
 
-namespace UnityEngine.UIElements
+namespace AssetLayer.Unity
 {
     public static class ImageLoader
     {

@@ -1,62 +1,65 @@
 using UnityEngine.Networking;
 using UnityEngine;
 using System.Collections;
-using Assetlayer.UnitySDK;
 
-public class ChangeMaterial : MonoBehaviour
+namespace AssetLayer.Unity
 {
-    public string nftId;
-    public Material defaultMat;
-    public string shader = "OFGames/Self Illumin Diffuse";
-    private SDKClass sdk;
-    private Renderer renderer;
 
-    void Start()
+    public class ChangeMaterial : MonoBehaviour
     {
-        sdk = new SDKClass();
-        Debug.Log(sdk);
-        renderer = GetComponent<Renderer>();
+        public string assetId;
+        public Material defaultMat;
+        public string shader = "OFGames/Self Illumin Diffuse";
+        private ApiManager manager;
+        private Renderer renderer;
 
-        if (string.IsNullOrEmpty(nftId))
+        void Start()
         {
-            renderer.material = defaultMat;
-        }
-        else
-        {
-            _ = StartCoroutine(sdk.GetExpression(nftId, "Menu View", (materialPath) =>
+            manager = new ApiManager();
+            Debug.Log(manager);
+            renderer = GetComponent<Renderer>();
+
+            if (string.IsNullOrEmpty(assetId))
             {
-                Debug.Log("Request Done");
-                StartCoroutine(LoadMaterial(materialPath));
-            }));
-        }
-
-    }
-
-    IEnumerator LoadMaterial(string materialPath)
-    {
-        using (System.Net.WebClient wc = new System.Net.WebClient())
-        {
-            wc.Headers[System.Net.HttpRequestHeader.AcceptEncoding] = "gzip";
-            wc.DownloadDataCompleted += (s, e) =>
+                renderer.material = defaultMat;
+            }
+            else
             {
-                byte[] imageBytes = e.Result;
-
-                Texture2D myTexture = new Texture2D(2, 2);
-                if (myTexture.LoadImage(imageBytes))
+                _ = StartCoroutine(manager.GetExpression(assetId, "Menu View", (materialPath) =>
                 {
-                    Material newMat = new Material(Shader.Find(shader));
-                    newMat.mainTexture = myTexture;
-                    renderer.material = newMat;
-                }
-                else
-                {
-                    Debug.LogError("Failed to load image from bytes");
-                }
-            };
+                    Debug.Log("Request Done");
+                    StartCoroutine(LoadMaterial(materialPath));
+                }));
+            }
 
-            wc.DownloadDataAsync(new System.Uri(materialPath));
         }
 
-        yield return null;
+        IEnumerator LoadMaterial(string materialPath)
+        {
+            using (System.Net.WebClient wc = new System.Net.WebClient())
+            {
+                wc.Headers[System.Net.HttpRequestHeader.AcceptEncoding] = "gzip";
+                wc.DownloadDataCompleted += (s, e) =>
+                {
+                    byte[] imageBytes = e.Result;
+
+                    Texture2D myTexture = new Texture2D(2, 2);
+                    if (myTexture.LoadImage(imageBytes))
+                    {
+                        Material newMat = new Material(Shader.Find(shader));
+                        newMat.mainTexture = myTexture;
+                        renderer.material = newMat;
+                    }
+                    else
+                    {
+                        Debug.LogError("Failed to load image from bytes");
+                    }
+                };
+
+                wc.DownloadDataAsync(new System.Uri(materialPath));
+            }
+
+            yield return null;
+        }
     }
 }

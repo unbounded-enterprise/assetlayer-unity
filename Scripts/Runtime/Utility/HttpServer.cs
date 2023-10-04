@@ -2,7 +2,7 @@ using System.Net;
 using System.Threading;
 using UnityEngine;
 
-namespace Assetlayer.Login { 
+namespace AssetLayer.Unity { 
 
     public delegate void RequestHandler(HttpListenerContext context);
 
@@ -53,3 +53,4 @@ namespace Assetlayer.Login {
         }
     }
 }
+

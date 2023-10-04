@@ -1,16 +1,18 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
-public class RotateCoin : MonoBehaviour
+namespace AssetLayer.Unity
 {
-    // Rotation speed
-    public float rotationSpeed = 100f;
 
-    // Update is called once per frame
-    void Update()
+    public class RotateCoin : MonoBehaviour
     {
-        // Rotate the coin
-        transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+        // Rotation speed
+        public float rotationSpeed = 100f;
+
+        // Update is called once per frame
+        void Update()
+        {
+            // Rotate the coin
+            transform.Rotate(Vector3.up, rotationSpeed * Time.deltaTime);
+        }
     }
 }

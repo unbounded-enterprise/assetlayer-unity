@@ -13,6 +13,10 @@ GameObject:
   - component: {fileID: 7013886743949257389}
   - component: {fileID: 1900586401856256180}
   - component: {fileID: 8979696210291005119}
+  - component: {fileID: 7207141125249708220}
+  - component: {fileID: 8787303921827786957}
+  - component: {fileID: 1022904166605884265}
+  - component: {fileID: 1540946107441793614}
   m_Layer: 0
   m_Name: InventoryUI
   m_TagString: Untagged
@@ -33,7 +37,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &4933284287494009445
 MonoBehaviour:
@@ -47,10 +51,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62de0dfd937ba9a428b4a2d0127d8c9d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  menuName: 
+  selectFunctionality: 0
+  giftFunctionality: 0
+  list: 0
+  detailExpressionId: 
   onAssetSelection:
     m_PersistentCalls:
       m_Calls: []
   slotId: 
+  slotIds: []
   assetExpressionId: 
 --- !u!114 &7013886743949257389
 MonoBehaviour:
@@ -95,4 +105,53 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   AssetCardTemplate: {fileID: 9197481963319205126, guid: 0047a92a9a4908d4c85397a5946d0058, type: 3}
-  toggleButtonUXML: {fileID: 0}
+  YourUI: {fileID: 0}
+  toggleElementName: 
+--- !u!114 &7207141125249708220
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5233384751895321862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16173428f7358476fa784f899e396692, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &8787303921827786957
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5233384751895321862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d62171373e4ba748af6e0184935a11f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1022904166605884265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5233384751895321862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2974cac8bfa29c04ea2c90122a3a6144, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &1540946107441793614
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5233384751895321862}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8833b4b0c87264b47ae508d9e8066018, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

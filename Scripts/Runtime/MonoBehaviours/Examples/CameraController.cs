@@ -1,11 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
-using System.Threading;
 using UnityEngine;
-using Assetlayer.Inventory;
 
-namespace Assetlayer.Controls
-{
+namespace AssetLayer.Unity { 
 
     public class CameraController : MonoBehaviour
     {
@@ -25,7 +20,7 @@ namespace Assetlayer.Controls
             Cursor.visible = false;
             Cursor.lockState = CursorLockMode.Locked;
             currentZoom = minZoom + ((maxZoom + minZoom) / 10.0f);
-            InventoryUIManager.OnInventoryToggled += InventoryToggled;
+            InventoryUIManagerUnityUI.OnInventoryToggled += InventoryToggled;
         }
 
         public void InventoryToggled(bool showing)

@@ -1,8 +1,8 @@
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
-using Assetlayer.UnitySDK;
-using static Assetlayer.UtilityFunctions.UtilityFunctions;
+using AssetLayer.Unity;
+using static AssetLayer.Unity.UtilityFunctions;
 
 public class InventoryManager : MonoBehaviour
 {

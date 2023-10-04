@@ -1,0 +1,8 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="False">
+    <ui:VisualElement name="NftCard" class="NftCard" style="background-color: rgba(238, 238, 238, 0);">
+        <ui:VisualElement name="MenuViewImage" class="MenuViewImage">
+            <ui:Label tabindex="-1" text="3" display-tooltip-when-elided="true" name="NftCount" class="NftCount" />
+        </ui:VisualElement>
+        <ui:Label tabindex="-1" text="MyCollection" display-tooltip-when-elided="true" name="CollectionName" class="CollectionName" style="margin-left: 0; margin-right: 0; margin-top: 0; margin-bottom: 0;" />
+    </ui:VisualElement>
+</ui:UXML>

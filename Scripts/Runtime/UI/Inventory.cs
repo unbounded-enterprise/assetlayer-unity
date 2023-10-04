@@ -4,14 +4,16 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Events;
-using Assetlayer.UnitySDK;
 using UnityEngine.UIElements;
 using System;
-using static Assetlayer.UnitySDK.SDKClass;
+using static AssetLayer.Unity.ApiManager;
 using PimDeWitte.UnityMainThreadDispatcher;
-using static Assetlayer.UtilityFunctions.UtilityFunctions;
+using static AssetLayer.Unity.UtilityFunctions;
+using AssetLayer.SDK.Collections;
+using Newtonsoft.Json;
+using AssetLayer.SDK.Assets;
 
-namespace Assetlayer.Inventory
+namespace AssetLayer.Unity
 {
 
     public class Inventory : MonoBehaviour
@@ -20,17 +22,19 @@ namespace Assetlayer.Inventory
         public bool selectFunctionality;
         public bool giftFunctionality;
         public bool list;
+        public bool closeOnSelection = true;
 
         public string detailExpressionId;
 
         private string currentSearchString = "";
         private Coroutine debounceCoroutine = null;
-        private InventoryUIManager uiManager;
+        private InventoryUIManagerUnityUI uiManager;
 
         private string selectedSlotId;
         private string selectedCollectionId;
         private string selectedAssetId;
 
+        private bool initialSetupDone = false;
         private Asset selectedAsset;
         private Collection selectedCollection;
         private Slot selectedSlot;
@@ -42,7 +46,8 @@ namespace Assetlayer.Inventory
         private IEnumerable<Collection> loadedCollections;
         private IEnumerable<Asset> loadedAssets;
 
-        private SDKClass sdk = new SDKClass();
+
+        private ApiManager manager = new ApiManager();
         private AssetBundleDownloader bundleDownloader;
 
         [System.Serializable]
@@ -61,27 +66,47 @@ namespace Assetlayer.Inventory
             bundleDownloader = GetComponent<AssetBundleDownloader>();
         }
 
-        private void Start()
+        private IEnumerator Start()
         {
-            uiManager = GetComponent<InventoryUIManager>();
+            Debug.Log("Starting inventory");
+            uiManager = GetComponent<InventoryUIManagerUnityUI>();
 
             uiManager.UISearchInitiated += OnSearchValueChanged;
             uiManager.UICloseInitiated += HideInventoryUI;
+            InventoryUIManagerUnityUI.OnInventoryToggled += ToggleInventoryUI;
             uiManager.UIBackInitiated += BackClickedHandler;
             uiManager.UIAssetSelected += UIAssetSelectedHandler;
-
-            if (string.IsNullOrEmpty(slotId))
-            {
-                DisplaySlots();
-            }
-            else
-            {
-                selectedSlotId = slotId;
-                DisplayCollectionsForSelectedSlot();
-            }
-
-
+            yield return StartCoroutine(InitialLoading());
         }
+
+        private IEnumerator InitialLoading()
+        {
+            if (!initialSetupDone)
+            {
+
+
+                if (string.IsNullOrEmpty(slotId))
+                {
+                    StartCoroutine(DisplaySlots());
+                }
+                else
+                {
+
+                    if (loadedSlots == null)
+                    {
+                        Task<IEnumerable<Slot>> fetchTask = FetchSlots();
+                        yield return WaitForTask(fetchTask);
+                        loadedSlots = fetchTask.Result;
+
+                    }
+                    SelectSlot(slotId);
+                    // StartCoroutine(DisplayCollectionsForSelectedSlot());
+                }
+                uiManager.UpdateInventoryTitle(menuName);
+                initialSetupDone = true;
+            }
+        }
+
 
         private void Update()
         {
@@ -91,25 +116,32 @@ namespace Assetlayer.Inventory
             }
         }
 
-        private async Task DisplaySlots()
+        private IEnumerator DisplaySlots()
         {
-            Debug.Log("DiplaySlotsstart");
+            Debug.Log("DisplaySlots start, display type slots");
             currentDisplayType = DisplayType.Slots;
-            var slots = loadedSlots != null ? loadedSlots : await FetchSlots();
-            loadedSlots = slots;
+
+            if (loadedSlots == null)
+            {
+                Task<IEnumerable<Slot>> fetchTask = FetchSlots();
+                yield return WaitForTask(fetchTask);
+                loadedSlots = fetchTask.Result;
+            }
+
+            var slots = loadedSlots;
             Debug.Log("loaded slots: " + slots);
 
             if (slots == null)
             {
                 Debug.Log("slots were not loaded");
-                return;
+                yield break; // Exit the coroutine early
             }
 
             List<UIAsset> convertedUISlots = new List<UIAsset>();
             Debug.Log("converted slots: " + convertedUISlots);
+
             // Only consider slots with slotId present in the slotIds list.
             IEnumerable<Slot> filteredLoadedSlots;
-
             if (slotIds.Any())
             {
                 // If slotIds is not empty, filter the slots based on it.
@@ -120,51 +152,73 @@ namespace Assetlayer.Inventory
                 // If slotIds is empty, use all the loadedSlots.
                 filteredLoadedSlots = slots;
             }
+
             foreach (var slot in filteredLoadedSlots)
             {
                 convertedUISlots.Add(UIAsset.ConvertToUIAsset(slot));
             }
-            Debug.Log("converted end: " + convertedUISlots);
 
+            Debug.Log("converted end: " + convertedUISlots);
             IEnumerable<UIAsset> filteredSlots = FilterBySearch(convertedUISlots, currentSearchString);
             Debug.Log("ready to display ui slots: " + filteredSlots);
 
-            // Ensure this is called on the main thread
-            UnityMainThreadDispatcher.Instance().Enqueue(() =>
-            {
-                uiManager.DisplayUIAssets(filteredSlots);
-            });
+            uiManager.DisplayUIAssets(filteredSlots);
         }
 
-
-        private async Task DisplayCollectionsForSelectedSlot()
+        private IEnumerator DisplayCollectionsForSelectedSlot()
         {
+            Debug.Log("DisplayCollectionsForSelectedSlot");
             currentDisplayType = DisplayType.Collections;
-            loadedCollections = await FetchCollections(selectedSlot.collections);
-            Debug.Log("loaderCollections: " + loadedCollections?.ToString());
+            Task<IEnumerable<Collection>> fetchTask = FetchCollections(selectedSlot.collections);
+            yield return WaitForTask(fetchTask);
+            loadedCollections = fetchTask.Result;
+
+            Debug.Log("loadedCollections: " + loadedCollections?.ToString());
+
             List<UIAsset> convertedUICollections = new List<UIAsset>();
+
             foreach (var collection in loadedCollections)
             {
-                convertedUICollections.Add(UIAsset.ConvertToUIAsset(collection, assetExpressionId));
+                long collectionBalanceCount = 0;
+                Slot collectionSlot = loadedSlots.FirstOrDefault(s => s.slotId == collection.slotId);
+                Debug.Log("collectionID: " + collection.collectionId + " selectedSlot: " + collectionSlot + " counts: " + collectionSlot.balanceCounts);
+                if (collectionSlot.balanceCounts == null)
+                {
+                    Debug.Log("baalanceCounts is null" + collectionSlot);
+                    continue;
+                }
+                if (collectionSlot.balanceCounts.TryGetValue(collection.collectionId, out collectionBalanceCount))
+                {
+                    Debug.Log("Count found: " + collectionBalanceCount);
+                    convertedUICollections.Add(UIAsset.ConvertToUIAsset(collection, assetExpressionId, (int)collectionBalanceCount));
+                }
+                else
+                {
+                    Debug.Log("Collection not in balance");
+                }
+
             }
 
             IEnumerable<UIAsset> filteredCollections = FilterBySearch(convertedUICollections, currentSearchString);
-            Debug.Log("filtered colelctions: " + filteredCollections);
-            // Ensure this is called on the main thread
-            UnityMainThreadDispatcher.Instance().Enqueue(() =>
-            {
-            Debug.Log("Display Collections: " + filteredCollections);
-                uiManager.DisplayUIAssets(filteredCollections);
-            });
+            Debug.Log("filtered collections: " + filteredCollections);
+
+            uiManager.DisplayUIAssets(filteredCollections);
+            Debug.Log("end of display collections state: " + currentDisplayType);
         }
 
 
-        private async Task DisplayAssetsForSelectedCollection()
+
+
+        private IEnumerator DisplayAssetsForSelectedCollection()
         {
             currentDisplayType = DisplayType.Assets;
-            loadedAssets = await FetchAssetsByCollectionId(selectedCollectionId);
+
+            Task<IEnumerable<Asset>> fetchTask = FetchAssetsByCollectionId(selectedCollectionId);
+            yield return WaitForTask(fetchTask);
+            loadedAssets = fetchTask.Result;
 
             List<UIAsset> convertedUIAssets = new List<UIAsset>();
+
             foreach (var asset in loadedAssets)
             {
                 AssetCacheManager.Instance.AddToCache(asset);
@@ -172,11 +226,8 @@ namespace Assetlayer.Inventory
             }
 
             IEnumerable<UIAsset> filteredAssets = FilterBySearch(convertedUIAssets, currentSearchString);
-            // Ensure this is called on the main thread
-            UnityMainThreadDispatcher.Instance().Enqueue(() =>
-            {
-                uiManager.DisplayUIAssets(filteredAssets);
-            });
+
+            uiManager.DisplayUIAssets(filteredAssets);
         }
 
 
@@ -199,20 +250,25 @@ namespace Assetlayer.Inventory
         private IEnumerator DebounceSearch()
         {
             yield return new WaitForSeconds(0.3f);
+
             switch (currentDisplayType)
             {
                 case DisplayType.Slots:
-                    DisplaySlots();
+                    yield return StartCoroutine(DisplaySlots());
                     break;
+
                 case DisplayType.Collections:
-                    DisplayCollectionsForSelectedSlot();
+                    yield return StartCoroutine(DisplayCollectionsForSelectedSlot());
                     break;
+
                 case DisplayType.Assets:
-                    DisplayAssetsForSelectedCollection();
+                    yield return StartCoroutine(DisplayAssetsForSelectedCollection());
                     break;
             }
+
             debounceCoroutine = null;
         }
+
 
 
         private void OnSearchValueChanged(string newValue)
@@ -223,22 +279,33 @@ namespace Assetlayer.Inventory
             {
                 StopCoroutine(debounceCoroutine);
             }
-
+            Debug.Log("starting search coroutine on value change");
             debounceCoroutine = StartCoroutine(DebounceSearch());
         }
 
         private void BackClickedHandler()
         {
+            Debug.Log("state before clicking back: " + currentDisplayType);
             switch (currentDisplayType)
             {
                 case DisplayType.Assets:
+                    Debug.Log("Back from Assets");
                     selectedCollectionId = "";
                     SelectCollection(selectedCollectionId);
                     break;
 
                 case DisplayType.Collections:
                     selectedSlotId = "";
-                    SelectSlot(selectedSlotId);
+                    Debug.Log("clsoing from collections: slotId: " + slotId);
+                    if (string.IsNullOrEmpty(slotId)) // only show slot selection if slotId was not specified
+                    {
+                        SelectSlot(selectedSlotId);
+                    }
+                    else  // a slotId was specified, slot selection should not be shown, closing menu instead
+                    {
+                        HideInventoryUI();
+                    }
+
                     break;
 
                 case DisplayType.Slots:
@@ -247,14 +314,17 @@ namespace Assetlayer.Inventory
                     break;
 
                 default:
+                    Debug.Log("defualt state, should not happen, state: " + currentDisplayType);
                     HideInventoryUI();
                     break;
             }
+            Debug.Log("state after clicking back: " + currentDisplayType);
         }
 
         private void UIAssetSelectedHandler(UIAsset asset)
         {
-            Debug.Log("Asset selected: " + asset);
+            Debug.Log("Asset selected: " + asset + " current state: " + currentDisplayType);
+            
             switch (asset.AssetType)
             {
                 case UIAssetType.Slot:
@@ -270,6 +340,7 @@ namespace Assetlayer.Inventory
                     Asset selectedAsset = loadedAssets.FirstOrDefault(a => a.assetId == asset.UIAssetId);
                     if (selectedAsset != null)
                     {
+                        PlayerPrefs.SetString("AssetLayerSelectedAssetId", asset.UIAssetId);
                         SelectAsset(asset.UIAssetId);
                         if (asset.LoadedAssetBundle == null)
                         {
@@ -284,6 +355,10 @@ namespace Assetlayer.Inventory
                                 if (loadedBundle != null)
                                 {
                                     onAssetSelection.Invoke(selectedAsset);
+                                    if (closeOnSelection)
+                                    {
+                                        uiManager.ToggleInventoryUI();
+                                    }
                                 }
                                 else
                                 {
@@ -294,6 +369,11 @@ namespace Assetlayer.Inventory
                         else
                         {
                             onAssetSelection.Invoke(selectedAsset);
+                            if (closeOnSelection)
+                            {
+                                uiManager.ToggleInventoryUI();
+                            }
+
                         }
                     }
                     break;
@@ -307,32 +387,58 @@ namespace Assetlayer.Inventory
 
         private void HideInventoryUI()
         {
+            Debug.Log("Hideing inventory state:" + currentDisplayType);
+            initialSetupDone = false;
             uiManager.HideInventoryUI();
+
+        }
+
+        private void ToggleInventoryUI(bool open)
+        {
+            Debug.Log("toggling: " + open);
+            if (open)
+            {
+                StartCoroutine(InitialLoading());
+            }
+            else
+            {
+                initialSetupDone = false;
+            }
+
         }
 
         public void SelectSlot(string slotId)
         {
+            Debug.Log("Selecting Slot : " + slotId);
             selectedSlotId = slotId;
             if (string.IsNullOrEmpty(slotId))
             {
+                currentDisplayType = DisplayType.Slots;
                 selectedSlot = null;
-                DisplaySlots();
+                StartCoroutine(DisplaySlots());
                 uiManager.UpdateInventoryTitle(menuName);
             }
             else
             {
                 if (loadedSlots != null)
                 {
+                    currentDisplayType = DisplayType.Collections;
+                    Debug.Log("loaded slot not null: " + loadedSlots);
                     selectedSlot = loadedSlots.FirstOrDefault(a => a.slotId == selectedSlotId);
                     if (selectedSlot != null)
                     {
+                        Debug.Log("Before updating title");
                         uiManager.UpdateInventoryTitle(selectedSlot.slotName);
                     }
                 }
-                
-                DisplayCollectionsForSelectedSlot();
-            }
+                else
+                {
+                    Debug.Log("loaded slots are null");
+                }
 
+                StartCoroutine(DisplayCollectionsForSelectedSlot());
+            }
+            Debug.Log("after selecting slot state: " + currentDisplayType);
         }
 
         public void SelectCollection(string collectionId)
@@ -341,11 +447,12 @@ namespace Assetlayer.Inventory
             if (string.IsNullOrEmpty(collectionId))
             {
                 selectedCollection = null;
+                currentDisplayType = DisplayType.Collections;
                 SelectSlot(selectedSlotId);
             }
             else
             {
-                
+
                 if (loadedCollections != null)
                 {
                     selectedCollection = loadedCollections.FirstOrDefault(a => a.collectionId == selectedCollectionId);
@@ -355,8 +462,8 @@ namespace Assetlayer.Inventory
                     }
 
                 }
-
-                DisplayAssetsForSelectedCollection();
+                currentDisplayType = DisplayType.Assets;
+                StartCoroutine(DisplayAssetsForSelectedCollection());
 
 
             }
@@ -378,7 +485,7 @@ namespace Assetlayer.Inventory
                     selectedAsset = loadedAssets.FirstOrDefault(a => a.assetId == selectedAssetId);
                     uiManager.UpdateInventoryTitle(selectedAsset.collectionName + " #" + selectedAsset.serial);
                 }
-                
+
                 // Fetch asset details or handle interactions specific to the selected asset.
             }
 
@@ -388,9 +495,10 @@ namespace Assetlayer.Inventory
         {
             try
             {
-                IEnumerable<Collection> collectionInfos = await sdk.GetCollectionInfo(collectionIds);
+                IEnumerable<Collection> collectionInfos = await manager.GetCollectionInfo(collectionIds);
                 return collectionInfos;
-            } catch(Exception e)
+            }
+            catch (Exception e)
             {
                 Debug.Log("Fetch Collections fail: " + e.Message);
                 return null;
@@ -400,8 +508,12 @@ namespace Assetlayer.Inventory
 
         public async Task<IEnumerable<Slot>> FetchSlots()
         {
-            // Use the GetAppSlots method to retrieve all slot IDs
-            string[] slotIds = await sdk.GetAppSlots();
+
+            if (!slotIds.Any())
+            {
+                // Use the GetAppSlots method to retrieve all slot IDs
+                slotIds = new List<string>(await manager.GetAppSlots());
+            }
             Debug.Log("slotIds: " + slotIds);
 
             if (slotIds == null || !slotIds.Any())
@@ -414,8 +526,15 @@ namespace Assetlayer.Inventory
 
             foreach (var slotId in slotIds)
             {
+                if (string.IsNullOrEmpty(slotId))
+                {
+                    continue;
+                }
                 Debug.Log("in for each: " + slotId);
-                SlotInfo slotInfo = await sdk.GetSlotInfo(slotId);
+                SlotInfo slotInfo = await manager.GetSlotInfo(slotId);
+                Debug.Log("getting slot balance now");
+                var slotBalance = await manager.GetAssetBalance(slotId, true, true);
+
                 Debug.Log("slotinfo: " + slotInfo);
 
                 if (slotInfo != null)
@@ -429,6 +548,7 @@ namespace Assetlayer.Inventory
                         appId = slotInfo.appId,
                         collections = slotInfo.collections,
                         expression = slotInfo.expressions,
+                        balanceCounts = slotBalance as Dictionary<string, long>
                     });
                 }
             }
@@ -438,7 +558,7 @@ namespace Assetlayer.Inventory
 
         public async Task<IEnumerable<Asset>> FetchAssetsByCollectionId(string collectionId)
         {
-            IEnumerable<Asset> collectionAssets =  await sdk.GetBalanceOfCollection(collectionId);
+            IEnumerable<Asset> collectionAssets = await manager.GetBalanceOfCollection(collectionId);
             return collectionAssets;
         }
     }
@@ -474,10 +594,10 @@ namespace Assetlayer.Inventory
 
         public static UIAsset ConvertToUIAsset(Slot slot)
         {
-            return new UIAsset(slot.slotId, slot.slotName, slot.slotImage, "", slot.collections.Count, UIAssetType.Slot);
+            return new UIAsset(slot.slotId, slot.slotName, slot.slotImage, "", (int)slot.balanceCounts.Values.Sum(), UIAssetType.Slot);
         }
 
-        public static UIAsset ConvertToUIAsset(Collection collection, string assetExpressionId)
+        public static UIAsset ConvertToUIAsset(Collection collection, string assetExpressionId, int count)
         {
             return new UIAsset(
                 collection.collectionId,
@@ -488,7 +608,7 @@ namespace Assetlayer.Inventory
                     GetExpressionValueAssetBundle(collection.exampleExpressionValues, "AssetBundle")
                 :
                     GetExpressionValueByExpressionIdAssetBundle(collection.exampleExpressionValues, assetExpressionId),
-                collection.minted,
+                count,
                 UIAssetType.Collection);
         }
 
@@ -504,7 +624,7 @@ namespace Assetlayer.Inventory
                 :
                     GetExpressionValueByExpressionIdAssetBundle(asset.expressionValues, assetExpressionId)
                 ,
-                asset.serial,
+                (int)asset.serial,
                 UIAssetType.Asset);
         }
     }

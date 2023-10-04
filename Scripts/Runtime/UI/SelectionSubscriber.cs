@@ -1,52 +1,55 @@
 using UnityEngine;
 using UnityEngine.Events;
-using Assetlayer.UnitySDK;
-using Assetlayer.Inventory;
+using AssetLayer.Unity;
 
-public class SelectionSubscriber : MonoBehaviour
+namespace AssetLayer.Unity
 {
-    // Create a custom UnityEvent that accepts an Asset parameter.
-    [System.Serializable]
-    public class AssetUnityEvent : UnityEvent<Asset> { }
 
-    // This is the event you can set in the Unity Editor.
-    public AssetUnityEvent onAssetSelectedInEditor;
-
-    [System.Obsolete]
-    private void Start()
+    public class SelectionSubscriber : MonoBehaviour
     {
-        // Safety check: Warn if no method has been assigned in the Unity Editor.
-        if (onAssetSelectedInEditor == null || onAssetSelectedInEditor.GetPersistentEventCount() == 0)
+        // Create a custom UnityEvent that accepts an Asset parameter.
+        [System.Serializable]
+        public class AssetUnityEvent : UnityEvent<Asset> { }
+
+        // This is the event you can set in the Unity Editor.
+        public AssetUnityEvent onAssetSelectedInEditor;
+
+        [System.Obsolete]
+        private void Start()
         {
-            Debug.LogWarning("No method has been assigned to the onAssetSelectedInEditor event!");
-            return;
+            // Safety check: Warn if no method has been assigned in the Unity Editor.
+            if (onAssetSelectedInEditor == null || onAssetSelectedInEditor.GetPersistentEventCount() == 0)
+            {
+                Debug.LogWarning("No method has been assigned to the onAssetSelectedInEditor event!");
+                return;
+            }
+
+            // Find all Inventory instances.
+            Inventory[] inventories = FindObjectsOfType<Inventory>();
+
+            // Subscribe to each of them.
+            foreach (Inventory inventory in inventories)
+            {
+                inventory.onAssetSelection.AddListener(HandleAssetSelection);
+            }
         }
 
-        // Find all Inventory instances.
-        Inventory[] inventories = FindObjectsOfType<Inventory>();
-
-        // Subscribe to each of them.
-        foreach (Inventory inventory in inventories)
+        [System.Obsolete]
+        private void OnDestroy()
         {
-            inventory.onAssetSelection.AddListener(HandleAssetSelection);
+            // Clean up - unsubscribe from all Inventory instances.
+            Inventory[] inventories = FindObjectsOfType<Inventory>();
+            foreach (Inventory inventory in inventories)
+            {
+                inventory.onAssetSelection.RemoveListener(HandleAssetSelection);
+            }
         }
-    }
 
-    [System.Obsolete]
-    private void OnDestroy()
-    {
-        // Clean up - unsubscribe from all Inventory instances.
-        Inventory[] inventories = FindObjectsOfType<Inventory>();
-        foreach (Inventory inventory in inventories)
+        private void HandleAssetSelection(Asset selectedAsset)
         {
-            inventory.onAssetSelection.RemoveListener(HandleAssetSelection);
+            // When the onAssetSelection event in Inventory is fired, this method will be called.
+            // It will then invoke the method set in the Unity Editor.
+            onAssetSelectedInEditor?.Invoke(selectedAsset);
         }
-    }
-
-    private void HandleAssetSelection(Asset selectedAsset)
-    {
-        // When the onAssetSelection event in Inventory is fired, this method will be called.
-        // It will then invoke the method set in the Unity Editor.
-        onAssetSelectedInEditor?.Invoke(selectedAsset);
     }
 }
