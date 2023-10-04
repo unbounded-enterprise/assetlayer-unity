@@ -751,7 +751,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6cd889e89d2295849acc2ae3c39a7767, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  defaultNftId: 
+  defaultAssetId: 
   loadingSceneName: LoadingScene
 --- !u!114 &8308509401174263467
 MonoBehaviour:
@@ -779,6 +779,7 @@ GameObject:
   - component: {fileID: 6602573069995440242}
   - component: {fileID: 6719211250724187482}
   - component: {fileID: 8885787749914311199}
+  - component: {fileID: 391519242428483936}
   m_Layer: 0
   m_Name: Portal
   m_TagString: Untagged
@@ -1444,6 +1445,21 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 0}
+--- !u!114 &391519242428483936
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6527167376007245966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 832677f42891ce64497d3fadeee12ca9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  onAssetSelectedInEditor:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &6913580340422044838
 GameObject:
   m_ObjectHideFlags: 0
@@ -2089,7 +2105,7 @@ MonoBehaviour:
   defaultMaterial: {fileID: 2100000, guid: de3cf961c6d481f48874535f856be421, type: 2}
   nearMaterial: {fileID: 2100000, guid: 04c67275821c5294b968334b36506e2f, type: 2}
   enterMaterial: {fileID: 2100000, guid: 3f23540ac9b76f043accb9325dbcbd7a, type: 2}
-  NftIdToLoad: 
+  AssetIdToLoad: 
   SceneNameToLoad: 
   sceneImporter: {fileID: 3850402851129356062}
 --- !u!65 &380229244901305595

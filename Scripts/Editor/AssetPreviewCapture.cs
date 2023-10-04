@@ -2,53 +2,57 @@
 using UnityEditor;
 using UnityEngine;
 
-public class AssetPreviewCapture : EditorWindow
+namespace AssetLayer.Unity
 {
-    string assetPath = "";
-    string status = "";
-    float fieldOfView = 120f;
-    float fieldOfViewPrefab = 30f;
 
-    [MenuItem("Assets/Assetlayer/Asset Preview Capture")]
-    public static void ShowWindow()
+    public class AssetPreviewCapture : EditorWindow
     {
-        AssetPreviewCapture window = GetWindow<AssetPreviewCapture>();
-        string assetPath = AssetDatabase.GetAssetPath(Selection.activeObject);
-        if (assetPath.EndsWith(".unity"))
+        string assetPath = "";
+        string status = "";
+        float fieldOfView = 120f;
+        float fieldOfViewPrefab = 30f;
+
+        [MenuItem("Assets/Assetlayer/Asset Preview Capture")]
+        public static void ShowWindow()
         {
-            window.assetPath = assetPath;
-            window.status = "In Progress...";
-            window.LoadAndCaptureScenePreview(assetPath);
-            window.status = "Scene Capture completed.";
+            AssetPreviewCapture window = GetWindow<AssetPreviewCapture>();
+            string assetPath = AssetDatabase.GetAssetPath(Selection.activeObject);
+            if (assetPath.EndsWith(".unity"))
+            {
+                window.assetPath = assetPath;
+                window.status = "In Progress...";
+                window.LoadAndCaptureScenePreview(assetPath);
+                window.status = "Scene Capture completed.";
+            }
+            else if (assetPath.EndsWith(".prefab"))
+            {
+                window.assetPath = assetPath;
+                window.status = "In Progress...";
+                window.LoadAndCapturePrefabPreview(assetPath);
+                window.status = "Prefab Capture completed.";
+            }
+            else
+            {
+                window.status = "Error: Selected asset is neither a scene nor a prefab!";
+            }
         }
-        else if (assetPath.EndsWith(".prefab"))
+
+        void OnGUI()
         {
-            window.assetPath = assetPath;
-            window.status = "In Progress...";
-            window.LoadAndCapturePrefabPreview(assetPath);
-            window.status = "Prefab Capture completed.";
+            GUILayout.Label("Capture Asset Preview", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Asset Path", assetPath);
+            EditorGUILayout.LabelField("Status", status);
         }
-        else
+
+        void LoadAndCaptureScenePreview(string scenePath)
         {
-            window.status = "Error: Selected asset is neither a scene nor a prefab!";
+            ScenePreviewCapturer.CaptureScenePreview(scenePath, fieldOfView);
         }
-    }
 
-    void OnGUI()
-    {
-        GUILayout.Label("Capture Asset Preview", EditorStyles.boldLabel);
-        EditorGUILayout.LabelField("Asset Path", assetPath);
-        EditorGUILayout.LabelField("Status", status);
-    }
-
-    void LoadAndCaptureScenePreview(string scenePath)
-    {
-        ScenePreviewCapturer.CaptureScenePreview(scenePath, fieldOfView);
-    }
-
-    void LoadAndCapturePrefabPreview(string prefabPath)
-    {
-        PrefabPreviewCapturer.CapturePrefabPreview(prefabPath, fieldOfViewPrefab);
+        void LoadAndCapturePrefabPreview(string prefabPath)
+        {
+            PrefabPreviewCapturer.CapturePrefabPreview(prefabPath, fieldOfViewPrefab);
+        }
     }
 }
 #endif

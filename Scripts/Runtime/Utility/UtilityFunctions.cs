@@ -1,14 +1,15 @@
-using NUnit.Framework;
 using System.Linq;
-using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Networking;
 using System.Collections.Generic;
-using Assetlayer.UnitySDK;
 using System.Text.RegularExpressions;
 using System;
+using System.Collections;
+using System.Threading.Tasks;
+using AssetLayer.SDK.Expressions;
+using System.Reflection;
+using System.Text;
 
-namespace Assetlayer.UtilityFunctions
+namespace AssetLayer.Unity
 {
 
 
@@ -74,6 +75,58 @@ namespace Assetlayer.UtilityFunctions
             {
                 return false;
             }
+        }
+
+        public static void CopyProperties(object source, object destination)
+        {
+            if (source == null || destination == null)
+                throw new ArgumentNullException("Source or/and Destination Objects are null");
+
+            Type typeSource = source.GetType();
+            Type typeDestination = destination.GetType();
+
+            PropertyInfo[] sourceProperties = typeSource.GetProperties();
+            PropertyInfo[] destinationProperties = typeDestination.GetProperties();
+
+            foreach (PropertyInfo sourceProperty in sourceProperties)
+            {
+                foreach (PropertyInfo destinationProperty in destinationProperties)
+                {
+                    if (sourceProperty.Name == destinationProperty.Name &&
+                        destinationProperty.PropertyType.IsAssignableFrom(sourceProperty.PropertyType))
+                    {
+                        destinationProperty.SetValue(destination, sourceProperty.GetValue(source, null), null);
+                        break;
+                    }
+                }
+            }
+        }
+
+        public static IEnumerator WaitForTask(Task task)
+        {
+            while (!task.IsCompleted)
+            {
+                yield return null;
+            }
+
+            if (task.IsFaulted)
+            {
+                Debug.LogError(task.Exception);
+                // Handle the exception
+            }
+        }
+
+        public static string Generate24CharHexID()
+        {
+            var random = new System.Random();
+            var bytes = new byte[12];
+            random.NextBytes(bytes);
+            StringBuilder sb = new StringBuilder(24);
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                sb.Append(bytes[i].ToString("x2"));
+            }
+            return sb.ToString();
         }
 
         public static string GetExpressionValueAssetBundle(List<ExpressionValue> expressionValues, string expressionName)

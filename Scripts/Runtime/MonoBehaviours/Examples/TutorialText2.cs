@@ -1,29 +1,33 @@
 using UnityEngine;
 using TMPro;
 
-public class TutorialText2 : MonoBehaviour
+namespace AssetLayer.Unity
 {
-    private TextMeshPro textMesh;
 
-    private void Awake()
+    public class TutorialText2 : MonoBehaviour
     {
-        // Get the TextMeshPro component attached to the same GameObject this script is attached to
-        textMesh = GetComponent<TextMeshPro>();
-    }
+        private TextMeshPro textMesh;
 
-    private void OnTriggerEnter(Collider other)
-    {
-        if (other.gameObject.CompareTag("Player"))
+        private void Awake()
         {
-            textMesh.enabled = true;
+            // Get the TextMeshPro component attached to the same GameObject this script is attached to
+            textMesh = GetComponent<TextMeshPro>();
         }
-    }
 
-    private void OnTriggerExit(Collider other)
-    {
-        if (other.gameObject.CompareTag("Player"))
+        private void OnTriggerEnter(Collider other)
         {
-            textMesh.enabled = false;
+            if (other.gameObject.CompareTag("Player"))
+            {
+                textMesh.enabled = true;
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.gameObject.CompareTag("Player"))
+            {
+                textMesh.enabled = false;
+            }
         }
     }
 }

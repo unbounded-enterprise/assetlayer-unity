@@ -16,6 +16,7 @@ public static class SecretHolder
     public static string AssetlayerAppId;
     public static string DidToken;
     public static string UserDidToken;
+    public static string AssetlayerHandle;
 
     // This static constructor is called once when the scripts are loaded or the game starts in the editor.
     static SecretHolder()
@@ -60,7 +61,12 @@ public static class SecretHolder
                         else if(key == "DID_TOKEN")
                         {
                             DidToken = value;
-                            Debug.Log("didtoken readd" + value);
+                            Debug.Log("didtoken read" + value);
+                        }
+                        else if (key == "HANDLE")
+                        {
+                            AssetlayerHandle = value;
+                            Debug.Log("handle read" + value);
                         }
                     }
                 }

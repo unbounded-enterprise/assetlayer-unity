@@ -1,22 +1,26 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class AssetBundleCacheManager
+namespace AssetLayer.Unity
 {
-    // The instance for the Singleton pattern
-    private static AssetBundleCacheManager _instance;
-    public static AssetBundleCacheManager Instance
+
+    public class AssetBundleCacheManager
     {
-        get
+        // The instance for the Singleton pattern
+        private static AssetBundleCacheManager _instance;
+        public static AssetBundleCacheManager Instance
         {
-            if (_instance == null)
-                _instance = new AssetBundleCacheManager();
-            return _instance;
+            get
+            {
+                if (_instance == null)
+                    _instance = new AssetBundleCacheManager();
+                return _instance;
+            }
         }
+
+        // Dictionary to cache downloaded AssetBundles.
+        public Dictionary<string, AssetBundle> CachedBundles { get; private set; } = new Dictionary<string, AssetBundle>();
+
+        private AssetBundleCacheManager() { }  // Make the constructor private to prevent additional instantiations
     }
-
-    // Dictionary to cache downloaded AssetBundles.
-    public Dictionary<string, AssetBundle> CachedBundles { get; private set; } = new Dictionary<string, AssetBundle>();
-
-    private AssetBundleCacheManager() { }  // Make the constructor private to prevent additional instantiations
 }

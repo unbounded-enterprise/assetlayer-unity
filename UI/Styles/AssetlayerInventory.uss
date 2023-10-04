@@ -5,7 +5,7 @@
     border-width: 2px;
     border-radius: 6px;
     width: 132px;
-    background-color: rgb(238, 238, 238);
+    background-color: rgba(238, 238, 238, 0);
     height: 156px;
     margin: 12px;
     overflow: hidden;
