@@ -3,6 +3,9 @@ using UnityEngine;
 using System.IO;
 using System;
 using System.Threading.Tasks;
+using NUnit.Framework;
+using System.Collections.Generic;
+using AssetLayer.SDK.Collections;
 
 namespace AssetLayer.Unity
 {
@@ -15,10 +18,11 @@ namespace AssetLayer.Unity
         const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
         float fieldOfView = 120f;
         float fieldOfViewPrefab = 30f;
+        private const string AppAssetsPath = "Assets/AssetlayerUnitySDK/AppAssets";
 
         private bool isUploadingExpression = false;
 
-        [MenuItem("Assets/Assetlayer/Re-upload Expression Values")]
+        [MenuItem("Assets/AssetLayer/Re-upload Expression Values")]
         static void ShowWindow()
         {
             // Show existing window instance. If one doesn't exist, make one.
@@ -54,6 +58,13 @@ namespace AssetLayer.Unity
 
         async Task CreateBundleAndUploadExpression(string collectionId)
         {
+            // get collection info
+            ApiManager manager = new ApiManager();
+            List<string> collectionIds = new List<string>();
+            collectionIds.Add(collectionId);
+            List<Collection> collectionInfo = await manager.GetCollectionInfo(collectionIds);
+            string collectionName = collectionInfo[0].collectionName;
+            string slotId = collectionInfo[0].slotId;
 
             bool wasScene = Selection.activeObject is SceneAsset;
             bool wasPrefab = Selection.activeObject is GameObject;
@@ -120,7 +131,7 @@ namespace AssetLayer.Unity
             }
             Debug.Log("imageurls2: " + imageUrl);
 
-            ApiManager manager = new ApiManager();
+
             bool uploadSuccess = false;
             try
             {
@@ -158,8 +169,14 @@ namespace AssetLayer.Unity
 
             bool uploadSuccessMenuView = await manager.UploadBundleExpression(collectionId, imageUrl, "Image", "Menu View");
 
+            if (uploadSuccess && selectedObject is GameObject)
+            {
+                SavePrefab((GameObject)selectedObject, slotId, collectionId, collectionName);
+            }
+
             if (uploadSuccess)
             {
+
                 Debug.Log("AssetBundle uploaded successfully!");
                 successMessage = "AssetBundle created and uploaded successfully!";
                 Repaint();
@@ -211,6 +228,90 @@ namespace AssetLayer.Unity
 
             return targetBundlePath;
         }
+
+        private void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
+        public void SavePrefab(GameObject selectedGameObject, string slotId, string collectionId, string collectionName)
+        {
+            try
+            {
+                string slotFolderPath = Path.Combine(AppAssetsPath, slotId);
+                string collectionFolderPath = Path.Combine(slotFolderPath, collectionId);
+                string gameObjectPath = Path.Combine(slotFolderPath, collectionName + collectionId + ".prefab");
+
+                // Create directories if they do not exist
+                EnsureDirectoryExists(AppAssetsPath);
+                EnsureDirectoryExists(slotFolderPath);
+                EnsureDirectoryExists(collectionFolderPath);
+
+                // Check if a prefab with the same name already exists
+                if (File.Exists(gameObjectPath))
+                {
+                    // Delete the existing prefab
+                    AssetDatabase.DeleteAsset(gameObjectPath);
+                }
+
+                // Save the prefab to disk
+                GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(selectedGameObject, gameObjectPath);
+
+                if (prefabAsset != null)
+                {
+                    // Calculate hash
+                    string prefabHash = UtilityFunctions.CalculatePrefabHash(prefabAsset);
+                    Debug.Log("Prefab Hash: " + prefabHash);
+
+                    // Load the AssetBundleDatabase ScriptableObject
+                    string databasePath = "Assets/AssetlayerUnitySDK/ScriptableObjects/AssetBundleDatabase.asset";
+                    AssetBundleDatabase assetBundleDatabase = AssetDatabase.LoadAssetAtPath<AssetBundleDatabase>(databasePath);
+                    if (assetBundleDatabase == null)
+                    {
+                        Debug.LogError("AssetBundleDatabase not found at path: " + databasePath);
+                        return;
+                    }
+                    else
+                    {
+                        Debug.Log("scriptable object found");
+                    }
+
+                    // Create a new AssetBundleData entry
+                    AssetBundleData newAssetBundleData = new AssetBundleData
+                    {
+                        prefabPath = gameObjectPath,
+                        hash = prefabHash,
+                        collectionId = collectionId,
+                        collectionName = collectionName,
+                        slotId = slotId,
+                        version = "1.0" // Set the version number as required
+                    };
+
+                    // Add the new entry to the AssetBundleDatabase
+                    assetBundleDatabase.bundles.Add(newAssetBundleData);
+
+                    // Save changes to the AssetBundleDatabase
+                    EditorUtility.SetDirty(assetBundleDatabase);
+                    AssetDatabase.SaveAssets();
+
+                    // Refresh the AssetDatabase
+                    AssetDatabase.Refresh();
+                }
+                else
+                {
+                    Debug.LogError("Failed to save prefab: " + selectedGameObject.name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("save prefab exception: " + ex.Message);
+            }
+
+        }
+
 
         Texture2D MakeTextureReadable(Texture2D originalTexture)
         {

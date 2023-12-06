@@ -18,6 +18,8 @@ namespace AssetLayer.Unity
         [SerializeField] private Button closeButton;
         [SerializeField] private Button backButton;
         [SerializeField] private GameObject inventoryUIGameObject;
+        [SerializeField] private ScrollRect inventoryScrollRect;
+
 
         public delegate void UISelectionHandler(UIAsset selectedUIAsset);
         public event UISelectionHandler UIAssetSelected;
@@ -128,7 +130,7 @@ namespace AssetLayer.Unity
                     OnInventoryToggled?.Invoke(true);
                     StartCoroutine(ScaleObject(Vector3.zero, Vector3.one, animationTime, () =>
                     {
-                       
+
                     }));
                 }
                 else
@@ -144,6 +146,11 @@ namespace AssetLayer.Unity
             {
                 Debug.LogError("InventoryUI GameObject is not assigned in the Inspector.");
             }
+
+            if (inventoryUIGameObject.activeSelf)
+            {
+                ResetScrollViewPosition();
+            }
         }
 
         public void HideInventoryUI()
@@ -155,7 +162,7 @@ namespace AssetLayer.Unity
                 StartCoroutine(ScaleObject(Vector3.one, Vector3.zero, animationTime, () =>
                 {
                     inventoryUIGameObject.SetActive(false);
-                    
+
                 }));
             }
             else
@@ -200,6 +207,7 @@ namespace AssetLayer.Unity
             {
                 StartCoroutine(DownloadAndDisplayAssetImage(uiAsset));
             }
+            ResetScrollViewPosition();
         }
 
         private IEnumerator DownloadAndDisplayAssetImage(UIAsset uiAsset)
@@ -208,11 +216,23 @@ namespace AssetLayer.Unity
             {
                 yield break;
             }
-
+            bool loadImageSuccess = false;
             Texture2D textureOnMainThread = null;
-            yield return StartCoroutine(LoadImageCoroutine(uiAsset.ImageURL, (texture) => { textureOnMainThread = texture; }));
+            yield return StartCoroutine(LoadImageCoroutine(uiAsset.ImageURL, (texture, success) =>
+            {
+                textureOnMainThread = texture;
+                loadImageSuccess = success;
+            }));
+
+            if (!loadImageSuccess)
+            {
+                // If the image fails to load, remove the asset from cache
+                AssetCacheManager.Instance.RemoveFromCache(uiAsset.UIAssetId);
+                yield break;
+            }
 
             GameObject clonedCard = Instantiate(assetCardTemplate, inventoryContainer.transform);
+
 
             // Get AssetCardElements component from the instantiated prefab
             AssetCardElements assetCardElements = clonedCard.GetComponent<AssetCardElements>();
@@ -228,21 +248,39 @@ namespace AssetLayer.Unity
         }
 
 
-        public IEnumerator LoadImageCoroutine(string imageUrl, Action<Texture2D> callback)
+        public IEnumerator LoadImageCoroutine(string imageUrl, Action<Texture2D, bool> callback)
         {
             bool isCompleted = false;
+            bool success = false;
             Texture2D resultTexture = null;
 
             imageDownloader.LoadImage(imageUrl, result =>
             {
                 isCompleted = true;
-                resultTexture = result;
+                if (result != null)
+                {
+                    resultTexture = result;
+                    success = true;
+                }
             });
 
             yield return new WaitUntil(() => isCompleted);
 
-            callback?.Invoke(resultTexture);
+            callback?.Invoke(resultTexture, success);
         }
+
+        private void ResetScrollViewPosition()
+        {
+            if (inventoryScrollRect != null)
+            {
+                inventoryScrollRect.verticalNormalizedPosition = 1;
+            }
+            else
+            {
+                Debug.LogError("Inventory Scroll Rect is not assigned in the Inspector.");
+            }
+        }
+
 
     }
 }

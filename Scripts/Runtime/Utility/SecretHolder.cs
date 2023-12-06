@@ -43,13 +43,13 @@ public static class SecretHolder
                     Debug.Log("line: " + line + "parts: " + parts[0] + ":" + parts[1]);
                     if (parts.Length == 2)
                     {
-                
+
                         string key = parts[0].Trim();
                         string value = parts[1].Trim();
                         Debug.Log("key" + key);
 
                         // If the key matches "APP_SECRET", store the value in the AppSecret variable
-                        if (key == "APP_SECRET")
+                        if (key == "ASSETLAYER_APP_SECRET")
                         {
                             AppSecret = value;
                         }
@@ -57,13 +57,13 @@ public static class SecretHolder
                         else if (key == "ASSETLAYER_APP_ID")
                         {
                             AssetlayerAppId = value;
-                        } 
-                        else if(key == "DID_TOKEN")
+                        }
+                        else if (key == "ASSETLAYER_DID_TOKEN")
                         {
                             DidToken = value;
                             Debug.Log("didtoken read" + value);
                         }
-                        else if (key == "HANDLE")
+                        else if (key == "ASSETLAYER_HANDLE")
                         {
                             AssetlayerHandle = value;
                             Debug.Log("handle read" + value);

@@ -12,7 +12,7 @@ namespace AssetLayer.Unity
         float fieldOfView = 120f;
         float fieldOfViewPrefab = 30f;
 
-        [MenuItem("Assets/Assetlayer/Asset Preview Capture")]
+        [MenuItem("Assets/AssetLayer/Asset Preview Capture")]
         public static void ShowWindow()
         {
             AssetPreviewCapture window = GetWindow<AssetPreviewCapture>();
