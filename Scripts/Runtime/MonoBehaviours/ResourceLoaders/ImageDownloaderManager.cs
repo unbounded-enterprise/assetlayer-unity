@@ -22,6 +22,12 @@ namespace AssetLayer.Unity
 
         private IEnumerator LoadImageCoroutine(string url, ImageDownloadedCallback callback)
         {
+            Debug.Log("image urls  loading: " + url);
+            if (String.IsNullOrEmpty(url) || !url.StartsWith("http"))
+            {
+                Debug.Log("malformed url for iamge");
+                yield return null;
+            }
             using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url))
             {
                 // Add headers to accept encoding types supported by libcurl

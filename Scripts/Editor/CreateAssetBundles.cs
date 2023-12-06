@@ -9,7 +9,7 @@ namespace AssetLayer.Unity
 
     public class CreateAssetBundlesFromSelection
     {
-        [MenuItem("Assets/Assetlayer/Create Assetlayer Collection")]
+        [MenuItem("Assets/AssetLayer/Create Assetlayer Collection")]
 
         static void ShowWindow()
         {
@@ -27,6 +27,8 @@ namespace AssetLayer.Unity
         Texture2D image;
         string successMessage = "";
         const string BUNDLEPATH = "AssetlayerUnitySDK/AssetBundles";
+        private const string AppAssetsPath = "Assets/AssetlayerUnitySDK/AppAssets";
+        private const string DatabasePath = "Assets/AssetlayerUnitySDK/ScriptableObjects/AssetBundleDatabase.asset";
         float fieldOfView = 120f;
         float fieldOfViewPrefab = 30f;
         string[] slotIds;
@@ -106,11 +108,104 @@ namespace AssetLayer.Unity
             }
         }
 
+        public void SavePrefab(GameObject selectedGameObject, string slotId, string collectionId, string collectionName)
+        {
+            try
+            {
+                string slotFolderPath = Path.Combine(AppAssetsPath, slotId);
+                string collectionFolderPath = Path.Combine(slotFolderPath, collectionId);
+                string gameObjectPath = Path.Combine(slotFolderPath, collectionName + collectionId + ".prefab");
+
+                // Create directories if they do not exist
+                EnsureDirectoryExists(AppAssetsPath);
+                EnsureDirectoryExists(slotFolderPath);
+
+                // Save the prefab to disk
+                GameObject prefabAsset = PrefabUtility.SaveAsPrefabAsset(selectedGameObject, gameObjectPath);
+
+                if (prefabAsset != null)
+                {
+                    // Calculate hash
+                    string prefabHash = UtilityFunctions.CalculatePrefabHash(prefabAsset);
+                    Debug.Log("Prefab Hash: " + prefabHash);
+
+                    // Load the AssetBundleDatabase ScriptableObject
+                    string databasePath = "Assets/AssetlayerUnitySDK/ScriptableObjects/AssetBundleDatabase.asset";
+                    AssetBundleDatabase assetBundleDatabase = AssetDatabase.LoadAssetAtPath<AssetBundleDatabase>(databasePath);
+                    if (assetBundleDatabase == null)
+                    {
+                        Debug.LogError("AssetBundleDatabase not found at path: " + databasePath);
+                        return;
+                    }
+                    else
+                    {
+                        Debug.Log("scriptable object found");
+                    }
+
+                    // Create a new AssetBundleData entry
+                    AssetBundleData newAssetBundleData = new AssetBundleData
+                    {
+                        prefabPath = gameObjectPath,
+                        hash = prefabHash,
+                        collectionId = collectionId,
+                        collectionName = collectionName,
+                        slotId = slotId,
+                        version = "1.0" // Set the version number as required
+                    };
+
+                    // Add the new entry to the AssetBundleDatabase
+                    assetBundleDatabase.bundles.Add(newAssetBundleData);
+
+                    // Save changes to the AssetBundleDatabase
+                    EditorUtility.SetDirty(assetBundleDatabase);
+                    AssetDatabase.SaveAssets();
+
+                    // Refresh the AssetDatabase
+                    AssetDatabase.Refresh();
+                }
+                else
+                {
+                    Debug.LogError("Failed to save prefab: " + selectedGameObject.name);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("save prefab exception: " + ex.Message);
+            }
+
+        }
+
+
+        private void EnsureDirectoryExists(string path)
+        {
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
         async Task CreateBundleFromSelection(string slotId, int maxSupply, string collectionName)
         {
             bool wasScene = Selection.activeObject is SceneAsset;
             bool wasPrefab = Selection.activeObject is GameObject;
-            UnityEngine.Object selectedObject = Selection.activeObject;
+            UnityEngine.Object[] selectedObjects = Selection.objects;
+
+            // Ensure that some assets are selected.
+            if (selectedObjects.Length == 0)
+            {
+                UnityEngine.Debug.Log("No assets selected for bundling");
+                return;
+            }
+
+            // Ensure that a single GameObject is selected if it's not a SceneAsset.
+            if (selectedObjects.Length != 1)
+            {
+                Debug.LogError("Please select a single GameObject or scene for asset bundling.");
+                return;
+            }
+
+            GameObject selectedGameObject = wasScene ? null : selectedObjects[0] as GameObject;
+            UnityEngine.Object selectedObject = selectedObjects[0];
             // Ensure the bundle save path exists.
             string fullPath = Path.Combine(Application.dataPath, BUNDLEPATH);
             if (!Directory.Exists(fullPath))
@@ -118,25 +213,13 @@ namespace AssetLayer.Unity
                 Directory.CreateDirectory(fullPath);
             }
 
-            // Retrieve the currently selected assets.
-            var selectedAssets = Selection.objects;
-
-            // Ensure that some assets are selected.
-            if (selectedAssets.Length == 0)
-            {
-                UnityEngine.Debug.Log("No assets selected for bundling");
-                return;
-            }
 
             // Set the bundle name to the first selected object's name.
-            string bundleName = selectedAssets[0].name.ToLower();
+            string bundleName = selectedObject.name.ToLower();
 
-            // Assign each selected asset the same bundle name.
-            foreach (var asset in selectedAssets)
-            {
-                string assetPath = AssetDatabase.GetAssetPath(asset);
-                AssetImporter.GetAtPath(assetPath).SetAssetBundleNameAndVariant(bundleName, "");
-            }
+
+            string assetPath = AssetDatabase.GetAssetPath(selectedObject);
+            AssetImporter.GetAtPath(assetPath).SetAssetBundleNameAndVariant(bundleName, "");
 
             // Refresh the AssetDatabase after setting the asset bundle names.
             AssetDatabase.Refresh();
@@ -152,7 +235,6 @@ namespace AssetLayer.Unity
             // If no image is selected and the first selected asset is a scene or a prefab, capture a preview image
             if (image == null && (wasScene || wasPrefab))
             {
-                string assetPath = AssetDatabase.GetAssetPath(selectedObject);
                 string imagePath = "";
 
                 if (wasScene)
@@ -192,7 +274,10 @@ namespace AssetLayer.Unity
             string collectionId = await sdkInstance.CreateCollection(slotId, collectionName, maxSupply, imageUrl);
             if (collectionId != null)
             {
-
+                if (selectedGameObject != null)
+                {
+                    SavePrefab(selectedGameObject, slotId, collectionId, collectionName);
+                }
                 Debug.Log("Collection created successfully!");
                 // First, try to get existing AssetBundle expression
                 string expressionId = await sdkInstance.GetAssetExpression(slotId);
@@ -251,12 +336,8 @@ namespace AssetLayer.Unity
                 Debug.Log("Failed to create collection.");
             }
 
-            // Remove the AssetBundle association from each asset.
-            foreach (var asset in selectedAssets)
-            {
-                string assetPath = AssetDatabase.GetAssetPath(asset);
-                AssetImporter.GetAtPath(assetPath).SetAssetBundleNameAndVariant("", "");
-            }
+
+            AssetImporter.GetAtPath(assetPath).SetAssetBundleNameAndVariant("", "");
 
             // Refresh the AssetDatabase after removing the asset bundle names.
             AssetDatabase.Refresh();

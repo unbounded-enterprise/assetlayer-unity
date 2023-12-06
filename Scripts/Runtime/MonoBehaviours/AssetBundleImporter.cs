@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Collections;
 using System;
+using UnityEditor;
 
 namespace AssetLayer.Unity
 {
@@ -50,6 +51,8 @@ namespace AssetLayer.Unity
             this.AssetId = asset.assetId;
             if (!string.IsNullOrEmpty(this.AssetId))
             {
+                PlayerPrefs.SetString("AssetLayerSelectedAssetId", asset.assetId);
+                PlayerPrefs.Save();
                 Initialize();
                 StartProcess();
             }
@@ -75,24 +78,51 @@ namespace AssetLayer.Unity
 
         private async void ApplyObj(string bundleUrl)
         {
-            if (string.IsNullOrEmpty(bundleUrl))
+            try
             {
-                Debug.Log("EmtpyBundleUrl");
-                return;
+                if (string.IsNullOrEmpty(bundleUrl))
+                {
+                    Debug.Log("Empty Bundle URL");
+                    ClearCacheAndRestartProcess();
+                    return;
+                }
+
+                Debug.Log("Download link: " + bundleUrl);
+
+                Debug.Log("downloadlink: " + bundleUrl);
+                // Check if the bundle is already cached
+                if (AssetBundleCacheManager.Instance.CachedBundles.ContainsKey(bundleUrl) && AssetBundleCacheManager.Instance.CachedBundles[bundleUrl] != null)
+                {
+                    Debug.Log("Bundle already cached, no need to download.");
+                    HandleLoadedBundle(AssetBundleCacheManager.Instance.CachedBundles[bundleUrl]);
+                }
+                else
+                {
+                    bundleDownloader.DownloadAndLoadBundle(bundleUrl, HandleLoadedBundle);
+                    // StartCoroutine(DownloadAndLoadBundleCoroutine(bundleUrl));
+                }
             }
-            Debug.Log("downloadlink: " + bundleUrl);
-            // Check if the bundle is already cached
-            if (AssetBundleCacheManager.Instance.CachedBundles.ContainsKey(bundleUrl) && AssetBundleCacheManager.Instance.CachedBundles[bundleUrl] != null)
+            catch (Exception ex)
             {
-                Debug.Log("Bundle already cached, no need to download.");
-                HandleLoadedBundle(AssetBundleCacheManager.Instance.CachedBundles[bundleUrl]);
+                Debug.LogError($"Error encountered: {ex.Message}");
+                ClearCacheAndRestartProcess();
             }
-            else
-            {
-                bundleDownloader.DownloadAndLoadBundle(bundleUrl, HandleLoadedBundle);
-                // StartCoroutine(DownloadAndLoadBundleCoroutine(bundleUrl));
-            }
+
+
         }
+
+        private void ClearCacheAndRestartProcess()
+        {
+            ClearCacheEntry(AssetId); // Clear the problematic cache entry
+            StartProcess(); // Restart the process
+        }
+
+        private void ClearCacheEntry(string assetId)
+        {
+            // Use the existing method to remove the asset from the cache
+            AssetCacheManager.Instance.RemoveFromCache(assetId);
+        }
+
 
         IEnumerator DownloadAndLoadBundleCoroutine(string bundleUrl)
         {
@@ -173,13 +203,13 @@ namespace AssetLayer.Unity
 
         public static void SwitchOutGameObject(GameObject AssetlayerGameObjectToSwitchOnChange, GameObject prefab)
         {
+            Debug.Log("switching out Asset Layer Asset");
             // Destroy the first child if it exists
             if (AssetlayerGameObjectToSwitchOnChange.transform.childCount > 0)
             {
                 Transform firstChild = AssetlayerGameObjectToSwitchOnChange.transform.GetChild(0);
                 Destroy(firstChild.gameObject);
             }
-
             // Instantiate the new prefab as a child
             GameObject newObject = Instantiate(prefab, AssetlayerGameObjectToSwitchOnChange.transform.position, AssetlayerGameObjectToSwitchOnChange.transform.rotation, AssetlayerGameObjectToSwitchOnChange.transform);
             newObject.transform.localRotation = prefab.transform.rotation;

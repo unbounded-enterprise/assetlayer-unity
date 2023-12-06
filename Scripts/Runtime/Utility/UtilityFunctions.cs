@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using AssetLayer.SDK.Expressions;
 using System.Reflection;
 using System.Text;
+using UnityEditor;
+using System.IO;
 
 namespace AssetLayer.Unity
 {
@@ -36,9 +38,11 @@ namespace AssetLayer.Unity
             switch (Application.platform)
             {
                 case RuntimePlatform.WindowsEditor:
+                    return "AssetBundleStandaloneWindows";
                 case RuntimePlatform.WindowsPlayer:
                     return "AssetBundleStandaloneWindows";
                 case RuntimePlatform.OSXEditor:
+                    return "AssetBundleStandaloneOSX";
                 case RuntimePlatform.OSXPlayer:
                     return "AssetBundleStandaloneOSX";
                 case RuntimePlatform.IPhonePlayer:
@@ -173,6 +177,37 @@ namespace AssetLayer.Unity
             }
 
             return false;
+        }
+
+#if UNITY_EDITOR
+        public static string CalculatePrefabHash(GameObject prefab)
+        {
+            string path = AssetDatabase.GetAssetPath(prefab);
+            if (File.Exists(path))
+            {
+                using (var md5 = System.Security.Cryptography.MD5.Create())
+                {
+                    using (var stream = File.OpenRead(path))
+                    {
+                        byte[] hash = md5.ComputeHash(stream);
+                        return BitConverter.ToString(hash).Replace("-", "").ToLowerInvariant();
+                    }
+                }
+            }
+            return null;
+        }
+
+#endif
+
+        private static string CalculateMD5Hash(string input)
+        {
+            // Use MD5 to calculate a hash from the input string
+            using (var md5 = System.Security.Cryptography.MD5.Create())
+            {
+                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                return BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+            }
         }
     }
 }

@@ -36,8 +36,16 @@ namespace AssetLayer.Unity
 #if UNITY_EDITOR
                 return AssetLayerSDK.APIURL;
 #else
-            return "YOUR GAME SERVER API URL HERE";
+            return "https://asset-layer-proxy-express-0eab8c53bc1d.herokuapp.com/api";
 #endif
+            }
+        }
+
+        public string gameServerUrl
+        {
+            get
+            {
+                return "https://asset-layer-proxy-express-0eab8c53bc1d.herokuapp.com/api";
             }
         }
 
@@ -266,7 +274,7 @@ namespace AssetLayer.Unity
                 maximum = maxSupply,
                 tags = new List<string>(),
                 properties = new Dictionary<string, string>(),
-                collectionBanner = dataUrl,
+                collectionBanner = "",
                 royaltyRecipient = HANDLE
             };
 
@@ -876,6 +884,77 @@ namespace AssetLayer.Unity
                     return assetList.Select(asset => new Asset(asset)).ToList();
                 }
             }
+
+            Debug.LogError("No Asset details found");
+            return null;
+        }
+
+        public async Task<List<Asset>> GetBalanceOfSlot(string slotId)
+        {
+            // Initialize the SDK if it hasn't been initialized.
+            InitSDKCheck();
+
+            // Create the properties object for the SDK call.
+            GetUserSlotAssetsProps props = new GetUserSlotAssetsProps
+            {
+                slotId = slotId,
+                idOnly = false,
+                countsOnly = false,
+            };
+
+
+            // Make the SDK call and await its completion.
+            Task<(List<AssetLayer.SDK.Assets.Asset>, List<AssetLayer.SDK.Assets.AssetIdOnly>, Dictionary<string, long>)> getBalanceOfSlotTask = AssetLayerSDK.Assets.GetUserSlotAssets(props);
+            await getBalanceOfSlotTask;
+
+            // Extract the result.
+            var (assetList, assetIdList, assetCounts) = getBalanceOfSlotTask.Result;
+
+            if (assetList != null)
+            {
+                Debug.Log("Getting Slot Asset details: " + assetList);
+                // Cast the list to List<Asset> if Asset is derived from AssetLayer.SDK.Assets.Asset
+                return assetList.Select(asset => new Asset(asset)).ToList();
+            }
+
+
+            Debug.LogError("No Asset details found");
+            return null;
+        }
+
+        public async Task<List<Collection>> GetAllAssetsOfSlot(string slotId)
+        {
+            // Initialize the SDK if it hasn't been initialized.
+            InitSDKCheck();
+
+            GetSlotCollectionsProps props = new GetSlotCollectionsProps
+            {
+                slotId = slotId
+            };
+
+            List<string> collectionIds = await AssetLayerSDK.Slots.GetSlotCollectionIds(props);
+
+            GetCollectionsProps collectionProps = new GetCollectionsProps
+            {
+                collectionIds = collectionIds
+            };
+
+
+
+            // Make the SDK call and await its completion.
+            Task<List<AssetLayer.SDK.Collections.Collection>> getBalanceOfSlotTask = AssetLayerSDK.Collections.GetCollections(collectionProps);
+            await getBalanceOfSlotTask;
+
+            // Extract the result.
+            var assetList = getBalanceOfSlotTask.Result;
+
+            if (assetList != null)
+            {
+                Debug.Log("Getting Slot Asset details: " + assetList);
+                // Cast the list to List<Asset> if Asset is derived from AssetLayer.SDK.Assets.Asset
+                return assetList;
+            }
+
 
             Debug.LogError("No Asset details found");
             return null;

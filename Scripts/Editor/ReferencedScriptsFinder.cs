@@ -9,7 +9,7 @@ namespace AssetLayer.Unity
 
     public class ReferencedScriptsFinder : EditorWindow
     {
-        [MenuItem("Assets/Assetlayer/Find Referenced Scripts")]
+        [MenuItem("Assets/AssetLayer/Find Referenced Scripts")]
         public static void FindScripts()
         {
             UnityEngine.Object selectedObject = Selection.activeObject;

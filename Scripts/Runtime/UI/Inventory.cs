@@ -12,6 +12,8 @@ using static AssetLayer.Unity.UtilityFunctions;
 using AssetLayer.SDK.Collections;
 using Newtonsoft.Json;
 using AssetLayer.SDK.Assets;
+using AssetLayer.SDK;
+using Newtonsoft.Json.Linq;
 
 namespace AssetLayer.Unity
 {
@@ -25,6 +27,11 @@ namespace AssetLayer.Unity
         public bool closeOnSelection = true;
 
         public string detailExpressionId;
+        public bool displayAll = false;
+
+        public bool autoSelect = true;
+
+
 
         private string currentSearchString = "";
         private Coroutine debounceCoroutine = null;
@@ -68,7 +75,6 @@ namespace AssetLayer.Unity
 
         private IEnumerator Start()
         {
-            Debug.Log("Starting inventory");
             uiManager = GetComponent<InventoryUIManagerUnityUI>();
 
             uiManager.UISearchInitiated += OnSearchValueChanged;
@@ -85,7 +91,7 @@ namespace AssetLayer.Unity
             {
 
 
-                if (string.IsNullOrEmpty(slotId))
+                if (string.IsNullOrEmpty(slotId) || displayAll)
                 {
                     StartCoroutine(DisplaySlots());
                 }
@@ -116,10 +122,45 @@ namespace AssetLayer.Unity
             }
         }
 
+        public async Task<IEnumerable<Asset>> FetchSlotAssets(string slotId)
+        {
+            ApiManager apiManager = new ApiManager();
+
+            IEnumerable<Asset> slotAssets = await apiManager.GetBalanceOfSlot(slotId);
+            return slotAssets;
+        }
+
         private IEnumerator DisplaySlots()
         {
             Debug.Log("DisplaySlots start, display type slots");
             currentDisplayType = DisplayType.Slots;
+
+            if (displayAll)
+            {
+
+                Task<IEnumerable<Asset>> fetchSlotAssetsTask = FetchSlotAssets(slotId);
+                yield return WaitForTask(fetchSlotAssetsTask);
+                loadedAssets = fetchSlotAssetsTask.Result;
+
+                currentDisplayType = DisplayType.Assets;
+                List<UIAsset> convertedUIAssets = new List<UIAsset>();
+                foreach (var asset in loadedAssets)
+                {
+                    convertedUIAssets.Add(UIAsset.ConvertToUIAsset(asset, assetExpressionId));
+                }
+
+                IEnumerable<UIAsset> filteredSlotAssets = FilterBySearch(convertedUIAssets, currentSearchString);
+
+                uiManager.DisplayUIAssets(filteredSlotAssets);
+
+                if (string.IsNullOrEmpty(PlayerPrefs.GetString("AssetLayerSelectedAssetId")) && filteredSlotAssets.Count() > 0 && autoSelect)
+                {
+                    SelectAsset(filteredSlotAssets.First().UIAssetId);
+                }
+
+                yield break;
+
+            }
 
             if (loadedSlots == null)
             {
@@ -262,6 +303,11 @@ namespace AssetLayer.Unity
                     break;
 
                 case DisplayType.Assets:
+                    if (displayAll)
+                    {
+                        yield return StartCoroutine(DisplaySlots());
+                        break;
+                    }
                     yield return StartCoroutine(DisplayAssetsForSelectedCollection());
                     break;
             }
@@ -290,6 +336,11 @@ namespace AssetLayer.Unity
             {
                 case DisplayType.Assets:
                     Debug.Log("Back from Assets");
+                    if (displayAll)
+                    {
+                        HideInventoryUI();
+                        break;
+                    }
                     selectedCollectionId = "";
                     SelectCollection(selectedCollectionId);
                     break;
@@ -324,7 +375,6 @@ namespace AssetLayer.Unity
         private void UIAssetSelectedHandler(UIAsset asset)
         {
             Debug.Log("Asset selected: " + asset + " current state: " + currentDisplayType);
-            
             switch (asset.AssetType)
             {
                 case UIAssetType.Slot:
@@ -340,7 +390,6 @@ namespace AssetLayer.Unity
                     Asset selectedAsset = loadedAssets.FirstOrDefault(a => a.assetId == asset.UIAssetId);
                     if (selectedAsset != null)
                     {
-                        PlayerPrefs.SetString("AssetLayerSelectedAssetId", asset.UIAssetId);
                         SelectAsset(asset.UIAssetId);
                         if (asset.LoadedAssetBundle == null)
                         {
@@ -612,11 +661,34 @@ namespace AssetLayer.Unity
                 UIAssetType.Collection);
         }
 
+        public static string GetNameOfProperties(Dictionary<string, object> properties)
+        {
+            var firstPropertyObject = properties.Values.FirstOrDefault() as JObject;
+
+            if (firstPropertyObject != null)
+            {
+                // Using JObject to get the "name" value
+                var name = firstPropertyObject["name"];
+                if (name != null)
+                {
+                    return name.ToString();
+                }
+            }
+
+            return null; // or some default value if the name isn't found
+        }
+
+
+
         public static UIAsset ConvertToUIAsset(Asset asset, string assetExpressionId)
         {
+
+            string name = GetNameOfProperties(asset.properties);
+
+
             return new UIAsset(
                 asset.assetId,
-                asset.collectionName,
+                name != null ? name : asset.collectionName,
                 GetExpressionValue(asset.expressionValues, "Menu View"),
                 string.IsNullOrEmpty(assetExpressionId)
                 ?
