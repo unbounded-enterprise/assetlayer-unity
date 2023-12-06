@@ -11,27 +11,18 @@ This repository contains a package for integrating AssetLayer inside a Unity App
 
 ## Configuration
 
-1. Create a `.env` file inside of your home directory.
+1. Create an Asset Layer App and copy the .env file you get to your home directory.
     - In Windows, this would be `C:\Users\<username>\.env`.
-2. Open the `.env` file in a text editor and enter two variables: 
-    APP_SECRET = Your_Assetlayer_Appsecret
-    ASSETLAYER_APP_ID = Your_Assetlayer_AppId
-    DID_TOKEN= Your DID_TOKEN (for testing in editor without login and using editor tools)
-    HANDLE = Your Asset Layer Handle, in the current build this needs to be changed in code in the SdkClass.cs (scripts -> Runtime -> Sdk ) and will be changed in the next build to use this handle instead.
-    
-
 ## Usage
 
-1. Create an app and a slot on `AssetLayer.com`.
+1. Create a slot on Asset Layer.
 2. In Unity, create your first Collection by:
     - Selecting the prefab in the `ExamplePrefabs` folder.
     - Right-clicking on it, select `Create Assetlayer Collection`.
-    - Enter your slotId and preferred CollectionName, image if you have, then click Create Bundle.
-3. After the collection is created, you can go to your assets on `AssetLayer.com` and:
-    - Lookup one of the `NftIds` on one of your NFTs that you just created.
-    - Copy the `NftId` and open the `ExampleScene` in Unity.
-    - Enter the `NftId` in the `AssetBundleImporter` component.
-4. You are now ready to start the scene and see your created NFT displayed.
+    - Select the slot you want and preferred CollectionName, image if you have, then click Create Bundle.
+3. Copy the slotId to the inventoryUIUnityUI gameobject in the STARTHERE scene.
+4. You can now start the STARTHERE scene and press I for inventory or click the inventory button to see your assets.
+5. Select one of your assets, this should load your asset as your character.
 
 ## Additional Steps
 
