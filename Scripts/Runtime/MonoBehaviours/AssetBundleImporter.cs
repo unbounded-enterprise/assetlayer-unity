@@ -47,7 +47,6 @@ namespace AssetLayer.Unity
 
         public void SetNewAsset(Asset asset)
         {
-            Debug.Log("NewAsset");
             this.AssetId = asset.assetId;
             if (!string.IsNullOrEmpty(this.AssetId))
             {
@@ -82,18 +81,13 @@ namespace AssetLayer.Unity
             {
                 if (string.IsNullOrEmpty(bundleUrl))
                 {
-                    Debug.Log("Empty Bundle URL");
                     ClearCacheAndRestartProcess();
                     return;
                 }
 
-                Debug.Log("Download link: " + bundleUrl);
-
-                Debug.Log("downloadlink: " + bundleUrl);
                 // Check if the bundle is already cached
                 if (AssetBundleCacheManager.Instance.CachedBundles.ContainsKey(bundleUrl) && AssetBundleCacheManager.Instance.CachedBundles[bundleUrl] != null)
                 {
-                    Debug.Log("Bundle already cached, no need to download.");
                     HandleLoadedBundle(AssetBundleCacheManager.Instance.CachedBundles[bundleUrl]);
                 }
                 else
@@ -126,8 +120,6 @@ namespace AssetLayer.Unity
 
         IEnumerator DownloadAndLoadBundleCoroutine(string bundleUrl)
         {
-            Debug.Log($"Starting to download AssetBundle from: {bundleUrl}");
-
             using (UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(bundleUrl))
             {
                 // Send request
@@ -162,7 +154,6 @@ namespace AssetLayer.Unity
             {
                 return;
             }
-            Debug.Log("HandleLoadedBundel" + bundle);
             if (bundle.isStreamedSceneAssetBundle)
             {
                 Debug.Log("loaded bundle is a scene");
@@ -176,7 +167,6 @@ namespace AssetLayer.Unity
             UnityEngine.Object[] allAssets = request.allAssets;
             if (allAssets != null && allAssets.Length > 0)
             {
-                Debug.Log($"Successfully loaded all assets. Count: {allAssets.Length}");
                 foreach (UnityEngine.Object asset in allAssets)
                 {
                     // Handle each asset
@@ -203,7 +193,6 @@ namespace AssetLayer.Unity
 
         public static void SwitchOutGameObject(GameObject AssetlayerGameObjectToSwitchOnChange, GameObject prefab)
         {
-            Debug.Log("switching out Asset Layer Asset");
             // Destroy the first child if it exists
             if (AssetlayerGameObjectToSwitchOnChange.transform.childCount > 0)
             {

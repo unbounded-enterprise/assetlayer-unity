@@ -21,7 +21,7 @@ namespace AssetLayer.Unity
         [SerializeField] private ScrollRect inventoryScrollRect;
 
 
-        public delegate void UISelectionHandler(UIAsset selectedUIAsset);
+        public delegate void UISelectionHandler(UIAsset selectedUIAsset, bool autoselection = false);
         public event UISelectionHandler UIAssetSelected;
 
         public static event System.Action<bool> OnInventoryToggled;
@@ -126,6 +126,10 @@ namespace AssetLayer.Unity
             {
                 if (!inventoryUIGameObject.activeSelf)
                 {
+                    if (inventoryUIGameObject.activeSelf)
+                    {
+                        StartCoroutine(ResetScrollViewPosition());
+                    }
                     inventoryUIGameObject.SetActive(true);
                     OnInventoryToggled?.Invoke(true);
                     StartCoroutine(ScaleObject(Vector3.zero, Vector3.one, animationTime, () =>
@@ -147,10 +151,7 @@ namespace AssetLayer.Unity
                 Debug.LogError("InventoryUI GameObject is not assigned in the Inspector.");
             }
 
-            if (inventoryUIGameObject.activeSelf)
-            {
-                ResetScrollViewPosition();
-            }
+
         }
 
         public void HideInventoryUI()
@@ -195,19 +196,16 @@ namespace AssetLayer.Unity
 
         public void DisplayUIAssets(IEnumerable<UIAsset> uiAssets)
         {
-            Debug.Log("DisplayUIAssets: " + uiAssets.ToString());
-
             foreach (Transform child in inventoryContainer.transform)
             {
                 Destroy(child.gameObject); // Remove the old elements.
             }
 
-            Debug.Log("After hide");
             foreach (var uiAsset in uiAssets)
             {
                 StartCoroutine(DownloadAndDisplayAssetImage(uiAsset));
             }
-            ResetScrollViewPosition();
+            StartCoroutine(ResetScrollViewPosition());
         }
 
         private IEnumerator DownloadAndDisplayAssetImage(UIAsset uiAsset)
@@ -220,6 +218,7 @@ namespace AssetLayer.Unity
             Texture2D textureOnMainThread = null;
             yield return StartCoroutine(LoadImageCoroutine(uiAsset.ImageURL, (texture, success) =>
             {
+                Debug.Log("final return, tex: " + texture + " scuess: " + success);
                 textureOnMainThread = texture;
                 loadImageSuccess = success;
             }));
@@ -254,14 +253,14 @@ namespace AssetLayer.Unity
             bool success = false;
             Texture2D resultTexture = null;
 
-            imageDownloader.LoadImage(imageUrl, result =>
+            imageDownloader.LoadImage(imageUrl, (result, loadingSuccess) =>
             {
-                isCompleted = true;
                 if (result != null)
                 {
                     resultTexture = result;
                     success = true;
                 }
+                isCompleted = true;
             });
 
             yield return new WaitUntil(() => isCompleted);
@@ -269,17 +268,19 @@ namespace AssetLayer.Unity
             callback?.Invoke(resultTexture, success);
         }
 
-        private void ResetScrollViewPosition()
+        private IEnumerator ResetScrollViewPosition()
         {
+            yield return new WaitForEndOfFrame(); // Wait for the end of the frame
             if (inventoryScrollRect != null)
             {
-                inventoryScrollRect.verticalNormalizedPosition = 1;
+                inventoryScrollRect.verticalNormalizedPosition = 1; // Or 0, depending on the desired position
             }
             else
             {
                 Debug.LogError("Inventory Scroll Rect is not assigned in the Inspector.");
             }
         }
+
 
 
     }

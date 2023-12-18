@@ -36,7 +36,7 @@ namespace AssetLayer.Unity
 #if UNITY_EDITOR
                 return AssetLayerSDK.APIURL;
 #else
-            return "https://asset-layer-proxy-express-0eab8c53bc1d.herokuapp.com/api";
+            return "https://yourgameserver.com/api";
 #endif
             }
         }
@@ -45,7 +45,7 @@ namespace AssetLayer.Unity
         {
             get
             {
-                return "https://asset-layer-proxy-express-0eab8c53bc1d.herokuapp.com/api";
+                return "https://yourgameserver.com/api";
             }
         }
 
@@ -56,7 +56,7 @@ namespace AssetLayer.Unity
 #if UNITY_EDITOR
                 return SecretHolder.AppSecret;
 #else
-            return "d93d20ab48db93e9d010985a7bd74177"; 
+            return "hardcoded appsecret"; 
 #endif
             }
         }
@@ -80,7 +80,7 @@ namespace AssetLayer.Unity
 #if UNITY_EDITOR
                 return SecretHolder.AssetlayerAppId;
 #else
-            return "64dc10469f07eb4ceb26ef14";
+            return "hardcoded appid";
 #endif
             }
         }
@@ -172,7 +172,6 @@ namespace AssetLayer.Unity
                     && response.body.assets[0].expressionValues.Count > 0)
                 {
                     string currentPlatformAttributeName = UtilityFunctions.GetCurrentPlatformExpressionAttribute();
-                    Debug.Log("Current Plattform: " + currentPlatformAttributeName);
                     var expression = response.body.assets[0].expressionValues.FirstOrDefault(e => e.expression.expressionName == expressionName && e.expressionAttribute.expressionAttributeName == currentPlatformAttributeName);
 
 
@@ -713,13 +712,11 @@ namespace AssetLayer.Unity
             {
                 var (assetList, assetIdList, assetCounts) = await AssetLayerSDK.Assets.GetUserSlotAssets(props);
 
-                Debug.Log("response pure: " + assetList + " idlist: " + assetIdList + " counts: " + assetCounts);
                 if (countsOnly)
                 {
                     if (assetCounts != null)
                     {
                         Dictionary<string, long> counts = assetCounts;
-                        Debug.Log("Getting Asset counts: pure: " + assetCounts);
 
                         return counts;
                     }
@@ -732,7 +729,6 @@ namespace AssetLayer.Unity
                 {
                     if (assetIdList != null)
                     {
-                        Debug.Log("Getting Asset IDs: " + assetIdList);
                         return assetIdList;
                     }
                 }
@@ -740,7 +736,6 @@ namespace AssetLayer.Unity
                 {
                     if (assetList != null)
                     {
-                        Debug.Log("Getting Asset details: " + assetList);
                         return assetList;
                     }
                 }
@@ -775,9 +770,7 @@ namespace AssetLayer.Unity
             }
             else
             {
-                Debug.Log("GetAssetDetails response: " + request.downloadHandler.text);
                 AssetResponse response = JsonUtility.FromJson<AssetResponse>(request.downloadHandler.text);
-                Debug.Log("Getting Asset details res" + response.body.assets);
                 if (response.success && response.body.assets != null)
                 {
                     return response.body.assets;
@@ -808,7 +801,6 @@ namespace AssetLayer.Unity
             request.SetRequestHeader("Content-Type", "application/json");
             if (!string.IsNullOrEmpty(APP_SECRET)) { request.SetRequestHeader("appsecret", APP_SECRET); }
             request.SetRequestHeader("didtoken", DID_TOKEN);
-            Debug.Log("set header to didtoken: " + DID_TOKEN);
 
             await request.SendWebRequest();
 
@@ -819,9 +811,7 @@ namespace AssetLayer.Unity
             }
             else
             {
-                Debug.Log("GetAssetCollection response: " + request.downloadHandler.text);
                 AssetResponse response = JsonUtility.FromJson<AssetResponse>(request.downloadHandler.text);
-                Debug.Log("Getting Asset collection res" + response.body.assets);
                 if (response.success && response.body.assets != null)
                 {
                     return response.body.assets;
@@ -865,21 +855,16 @@ namespace AssetLayer.Unity
             var (assetList, assetIdList, assetCounts) = getBalanceOfCollectionTask.Result;
             if (countsOnly)
             {
-                // Temporary: return an empty list for countsOnly case
-                Debug.Log("Getting Asset counts: " + assetCounts);
                 return new List<Asset>();
             }
             else if (idOnly)
             {
-                // Temporary: return an empty list for idOnly case
-                Debug.Log("Getting Asset IDs: " + assetIdList);
                 return new List<Asset>();
             }
             else
             {
                 if (assetList != null)
                 {
-                    Debug.Log("Getting Asset details: " + assetList);
                     // Cast the list to List<Asset> if Asset is derived from AssetLayer.SDK.Assets.Asset
                     return assetList.Select(asset => new Asset(asset)).ToList();
                 }
@@ -964,7 +949,6 @@ namespace AssetLayer.Unity
         public async Task<string[]> GetAppSlotsOld()
         {
             string url = $"{apiBase}/app/info?appId={APP_ID}";
-            Debug.Log("DID_TOKEN APP SLOTS: " + DID_TOKEN);
             UnityWebRequest request = UnityWebRequest.Get(url);
             request.SetRequestHeader("Content-Type", "application/json");
             if (!string.IsNullOrEmpty(APP_SECRET)) { request.SetRequestHeader("appsecret", APP_SECRET); }
@@ -978,14 +962,9 @@ namespace AssetLayer.Unity
             }
             else
             {
-                Debug.Log("GetAppSlots response: " + request.downloadHandler.text);
                 AppInfoResponse response = JsonUtility.FromJson<AppInfoResponse>(request.downloadHandler.text);
                 if (response.success && response.body.app != null)
                 {
-                    Debug.Log($"Number of slotIds: {response.body.app.slots.Length}");
-                    Debug.Log($"Slot Ids: {string.Join(", ", response.body.app.slots)}");
-
-
                     return response.body.app.slots;
                 }
 
@@ -1123,18 +1102,12 @@ namespace AssetLayer.Unity
         public async Task<List<Collection>> GetCollectionInfo(List<string> collectionIds)
         {
             InitSDKCheck();
-            Debug.Log("collectionids requested: " + collectionIds.ToString());
-            foreach (var collectionId in collectionIds)
-            {
-                Debug.Log("entry: " + collectionId);
-            }
             GetCollectionsProps props = new GetCollectionsProps
             {
                 collectionIds = collectionIds
             };
 
             List<SDK.Collections.Collection> collections = await AssetLayerSDK.Collections.GetCollections(props);
-            Debug.Log("collections response: " + collections);
             return collections;
         }
 
@@ -1181,7 +1154,6 @@ namespace AssetLayer.Unity
 
             string jsonBody = JsonUtility.ToJson(registerData);
 
-            Debug.Log("Json body mint: " + jsonBody);
 
             byte[] bodyRaw = new System.Text.UTF8Encoding().GetBytes(jsonBody);
 
@@ -1211,7 +1183,6 @@ namespace AssetLayer.Unity
 
             string jsonBody = JsonUtility.ToJson(registerData);
 
-            Debug.Log("Json body mint: " + jsonBody);
 
             byte[] bodyRaw = new System.Text.UTF8Encoding().GetBytes(jsonBody);
 

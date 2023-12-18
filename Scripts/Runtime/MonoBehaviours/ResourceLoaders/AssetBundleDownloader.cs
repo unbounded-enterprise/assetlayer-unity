@@ -14,17 +14,14 @@ namespace AssetLayer.Unity
         {
             try
             {
-                Debug.Log("bundleURL: " + bundleUrl + " callback: " + callback);
                 StartCoroutine(DownloadAndLoadBundleCoroutine(bundleUrl, callback));
             }
             catch (NullReferenceException e)
             {
-                Debug.Log("bundleURL: " + bundleUrl + " callback: " + callback);
                 Debug.LogError("Caught NullReferenceException: " + e.Message + "\nStackTrace: " + e.StackTrace);
             }
             catch (Exception e) // This will catch any other exceptions
             {
-                Debug.Log("bundleURL: " + bundleUrl + " callback: " + callback);
                 Debug.LogError("Caught Exception: " + e.Message + "\nStackTrace: " + e.StackTrace);
             }
         }
@@ -32,7 +29,6 @@ namespace AssetLayer.Unity
 
         private IEnumerator DownloadAndLoadBundleCoroutine(string bundleUrl, AssetBundleDownloadedCallback callback)
         {
-            Debug.Log($"Starting to download AssetBundle from: {bundleUrl}");
 
             using (UnityWebRequest request = UnityWebRequestAssetBundle.GetAssetBundle(bundleUrl))
             {
