@@ -18,15 +18,6 @@ namespace AssetLayer.Unity
                 // Send request and await response
                 await www.SendWebRequest();
 
-                // Log detailed info
-                Debug.Log($"[UnityWebRequest] URL: {url}");
-                Debug.Log($"[UnityWebRequest] Response Code: {www.responseCode}");
-                Debug.Log($"[UnityWebRequest] Error: {www.error}");
-                foreach (var header in www.GetResponseHeaders())
-                {
-                    Debug.Log($"{header.Key}: {header.Value}");
-                }
-
                 if (www.result == UnityWebRequest.Result.ConnectionError ||
                     www.result == UnityWebRequest.Result.ProtocolError)
                 {
@@ -62,7 +53,6 @@ namespace AssetLayer.Unity
                 }
                 else
                 {
-                    Debug.LogError("Failed to load image from " + url);
                     return null;
                 }
             }

@@ -7,6 +7,8 @@ using System.Text;
 using System;
 using PimDeWitte.UnityMainThreadDispatcher;
 using Newtonsoft.Json.Linq;
+using System.Collections;
+
 
 
 namespace AssetLayer.Unity
@@ -14,8 +16,10 @@ namespace AssetLayer.Unity
     public class LoginReceiver : MonoBehaviour
     {
         public string SceneToLoadOnLogin;
+        public bool loginReady = false;
 #if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_EDITOR
         private HttpServer httpServer;
+
 
         void Start()
         {
@@ -100,13 +104,11 @@ namespace AssetLayer.Unity
         }
         public void HandleLoginReceived(HttpListenerContext context)
         {
-            Debug.Log("Request received2");
             string encryptedToken = "";
             // Read query parameters
             try
             {
                 encryptedToken = context.Request.QueryString["token"];
-                Debug.Log("enrytpedToken" + encryptedToken);
             }
             catch (Exception ex)
             {
@@ -139,7 +141,6 @@ namespace AssetLayer.Unity
 
             // Create the response string based on the decrypted token
             string responseText = "Hello from MonoBehaviour. Your decrypted token is: " + decryptedToken;
-            Debug.Log("response decrypted: " + responseText);
             try
             {
                 var buffer = System.Text.Encoding.UTF8.GetBytes(responseText);
@@ -170,20 +171,37 @@ namespace AssetLayer.Unity
         }
 
 
+
+
 #endif
+        IEnumerator WaitForLogin()
+        {
+            yield return new WaitUntil(() => loginReady == true);
+            // Load scene or do any other task once loginReady is true
+            try
+            {
+                SceneManager.LoadScene(SceneToLoadOnLogin);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("loading scene wnet wrong" + ex.Message);
+            }
+
+
+        }
 
         public void SetDIDToken(string token)
         {
+
             SecurePlayerPrefs.SetSecureString("didtoken", token);
-            Debug.Log("Did token recetive" + token.Substring(20));
 #if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || UNITY_EDITOR
             if (httpServer != null)
             {
                 httpServer.Stop();
             }
 #endif
-            // Load the desired scene after successful login
-            SceneManager.LoadScene(SceneToLoadOnLogin);
+            // Load the desired scene after successful login but only after eventuell animations are done in the loading scene
+            StartCoroutine(WaitForLogin());
         }
 
 

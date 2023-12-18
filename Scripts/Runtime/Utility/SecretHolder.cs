@@ -39,14 +39,11 @@ public static class SecretHolder
                     // Split the line into key and value at the equals sign
                     string[] parts = line.Split(new char[] { '=' }, 2); // values might contain = as well
 
-                    // If the line correctly splits into a key and value
-                    Debug.Log("line: " + line + "parts: " + parts[0] + ":" + parts[1]);
                     if (parts.Length == 2)
                     {
 
                         string key = parts[0].Trim();
                         string value = parts[1].Trim();
-                        Debug.Log("key" + key);
 
                         // If the key matches "APP_SECRET", store the value in the AppSecret variable
                         if (key == "ASSETLAYER_APP_SECRET")
@@ -61,12 +58,10 @@ public static class SecretHolder
                         else if (key == "ASSETLAYER_DID_TOKEN")
                         {
                             DidToken = value;
-                            Debug.Log("didtoken read" + value);
                         }
                         else if (key == "ASSETLAYER_HANDLE")
                         {
                             AssetlayerHandle = value;
-                            Debug.Log("handle read" + value);
                         }
                     }
                 }

@@ -67,6 +67,8 @@ namespace AssetLayer.Unity
         public string slotId;
         public List<string> slotIds;
         public string assetExpressionId;
+        public KeyCode toggleKey = KeyCode.I;
+        public bool useToggleKey = true;
 
         private void Awake()
         {
@@ -116,7 +118,7 @@ namespace AssetLayer.Unity
 
         private void Update()
         {
-            if (Input.GetKeyDown(KeyCode.I))
+            if (useToggleKey && Input.GetKeyDown(toggleKey))
             {
                 uiManager.ToggleInventoryUI();
             }
@@ -132,7 +134,6 @@ namespace AssetLayer.Unity
 
         private IEnumerator DisplaySlots()
         {
-            Debug.Log("DisplaySlots start, display type slots");
             currentDisplayType = DisplayType.Slots;
 
             if (displayAll)
@@ -152,10 +153,9 @@ namespace AssetLayer.Unity
                 IEnumerable<UIAsset> filteredSlotAssets = FilterBySearch(convertedUIAssets, currentSearchString);
 
                 uiManager.DisplayUIAssets(filteredSlotAssets);
-
                 if (string.IsNullOrEmpty(PlayerPrefs.GetString("AssetLayerSelectedAssetId")) && filteredSlotAssets.Count() > 0 && autoSelect)
                 {
-                    SelectAsset(filteredSlotAssets.First().UIAssetId);
+                    UIAssetSelectedHandler(filteredSlotAssets.First(), true);
                 }
 
                 yield break;
@@ -170,16 +170,13 @@ namespace AssetLayer.Unity
             }
 
             var slots = loadedSlots;
-            Debug.Log("loaded slots: " + slots);
 
             if (slots == null)
             {
-                Debug.Log("slots were not loaded");
                 yield break; // Exit the coroutine early
             }
 
             List<UIAsset> convertedUISlots = new List<UIAsset>();
-            Debug.Log("converted slots: " + convertedUISlots);
 
             // Only consider slots with slotId present in the slotIds list.
             IEnumerable<Slot> filteredLoadedSlots;
@@ -199,22 +196,18 @@ namespace AssetLayer.Unity
                 convertedUISlots.Add(UIAsset.ConvertToUIAsset(slot));
             }
 
-            Debug.Log("converted end: " + convertedUISlots);
             IEnumerable<UIAsset> filteredSlots = FilterBySearch(convertedUISlots, currentSearchString);
-            Debug.Log("ready to display ui slots: " + filteredSlots);
 
             uiManager.DisplayUIAssets(filteredSlots);
         }
 
         private IEnumerator DisplayCollectionsForSelectedSlot()
         {
-            Debug.Log("DisplayCollectionsForSelectedSlot");
             currentDisplayType = DisplayType.Collections;
             Task<IEnumerable<Collection>> fetchTask = FetchCollections(selectedSlot.collections);
             yield return WaitForTask(fetchTask);
             loadedCollections = fetchTask.Result;
 
-            Debug.Log("loadedCollections: " + loadedCollections?.ToString());
 
             List<UIAsset> convertedUICollections = new List<UIAsset>();
 
@@ -222,29 +215,20 @@ namespace AssetLayer.Unity
             {
                 long collectionBalanceCount = 0;
                 Slot collectionSlot = loadedSlots.FirstOrDefault(s => s.slotId == collection.slotId);
-                Debug.Log("collectionID: " + collection.collectionId + " selectedSlot: " + collectionSlot + " counts: " + collectionSlot.balanceCounts);
                 if (collectionSlot.balanceCounts == null)
                 {
-                    Debug.Log("baalanceCounts is null" + collectionSlot);
                     continue;
                 }
                 if (collectionSlot.balanceCounts.TryGetValue(collection.collectionId, out collectionBalanceCount))
                 {
-                    Debug.Log("Count found: " + collectionBalanceCount);
                     convertedUICollections.Add(UIAsset.ConvertToUIAsset(collection, assetExpressionId, (int)collectionBalanceCount));
-                }
-                else
-                {
-                    Debug.Log("Collection not in balance");
                 }
 
             }
 
             IEnumerable<UIAsset> filteredCollections = FilterBySearch(convertedUICollections, currentSearchString);
-            Debug.Log("filtered collections: " + filteredCollections);
 
             uiManager.DisplayUIAssets(filteredCollections);
-            Debug.Log("end of display collections state: " + currentDisplayType);
         }
 
 
@@ -325,17 +309,14 @@ namespace AssetLayer.Unity
             {
                 StopCoroutine(debounceCoroutine);
             }
-            Debug.Log("starting search coroutine on value change");
             debounceCoroutine = StartCoroutine(DebounceSearch());
         }
 
         private void BackClickedHandler()
         {
-            Debug.Log("state before clicking back: " + currentDisplayType);
             switch (currentDisplayType)
             {
                 case DisplayType.Assets:
-                    Debug.Log("Back from Assets");
                     if (displayAll)
                     {
                         HideInventoryUI();
@@ -347,7 +328,6 @@ namespace AssetLayer.Unity
 
                 case DisplayType.Collections:
                     selectedSlotId = "";
-                    Debug.Log("clsoing from collections: slotId: " + slotId);
                     if (string.IsNullOrEmpty(slotId)) // only show slot selection if slotId was not specified
                     {
                         SelectSlot(selectedSlotId);
@@ -365,16 +345,14 @@ namespace AssetLayer.Unity
                     break;
 
                 default:
-                    Debug.Log("defualt state, should not happen, state: " + currentDisplayType);
                     HideInventoryUI();
                     break;
             }
-            Debug.Log("state after clicking back: " + currentDisplayType);
         }
 
-        private void UIAssetSelectedHandler(UIAsset asset)
+        private void UIAssetSelectedHandler(UIAsset asset, bool autoselection = false)
         {
-            Debug.Log("Asset selected: " + asset + " current state: " + currentDisplayType);
+
             switch (asset.AssetType)
             {
                 case UIAssetType.Slot:
@@ -386,10 +364,15 @@ namespace AssetLayer.Unity
                     break;
 
                 case UIAssetType.Asset:
-                    Debug.Log("selectedAsset: " + asset.ToString());
+
                     Asset selectedAsset = loadedAssets.FirstOrDefault(a => a.assetId == asset.UIAssetId);
                     if (selectedAsset != null)
                     {
+                        if (closeOnSelection && !autoselection)
+                        {
+                            uiManager.HideInventoryUI();
+                        }
+
                         SelectAsset(asset.UIAssetId);
                         if (asset.LoadedAssetBundle == null)
                         {
@@ -400,29 +383,15 @@ namespace AssetLayer.Unity
                             bundleDownloader.DownloadAndLoadBundle(bundleUrl, loadedBundle =>
                             {
                                 selectedAsset.loadedAssetBundle = loadedBundle;
-                                Debug.Log("Loaded bundle before vent" + asset.LoadedAssetBundle);
                                 if (loadedBundle != null)
                                 {
                                     onAssetSelection.Invoke(selectedAsset);
-                                    if (closeOnSelection)
-                                    {
-                                        uiManager.ToggleInventoryUI();
-                                    }
-                                }
-                                else
-                                {
-                                    Debug.LogError("Failed to download or load the asset bundle.");
                                 }
                             });
                         }
                         else
                         {
                             onAssetSelection.Invoke(selectedAsset);
-                            if (closeOnSelection)
-                            {
-                                uiManager.ToggleInventoryUI();
-                            }
-
                         }
                     }
                     break;
@@ -436,7 +405,6 @@ namespace AssetLayer.Unity
 
         private void HideInventoryUI()
         {
-            Debug.Log("Hideing inventory state:" + currentDisplayType);
             initialSetupDone = false;
             uiManager.HideInventoryUI();
 
@@ -444,7 +412,6 @@ namespace AssetLayer.Unity
 
         private void ToggleInventoryUI(bool open)
         {
-            Debug.Log("toggling: " + open);
             if (open)
             {
                 StartCoroutine(InitialLoading());
@@ -458,7 +425,6 @@ namespace AssetLayer.Unity
 
         public void SelectSlot(string slotId)
         {
-            Debug.Log("Selecting Slot : " + slotId);
             selectedSlotId = slotId;
             if (string.IsNullOrEmpty(slotId))
             {
@@ -472,22 +438,15 @@ namespace AssetLayer.Unity
                 if (loadedSlots != null)
                 {
                     currentDisplayType = DisplayType.Collections;
-                    Debug.Log("loaded slot not null: " + loadedSlots);
                     selectedSlot = loadedSlots.FirstOrDefault(a => a.slotId == selectedSlotId);
                     if (selectedSlot != null)
                     {
-                        Debug.Log("Before updating title");
                         uiManager.UpdateInventoryTitle(selectedSlot.slotName);
                     }
-                }
-                else
-                {
-                    Debug.Log("loaded slots are null");
                 }
 
                 StartCoroutine(DisplayCollectionsForSelectedSlot());
             }
-            Debug.Log("after selecting slot state: " + currentDisplayType);
         }
 
         public void SelectCollection(string collectionId)
@@ -563,7 +522,6 @@ namespace AssetLayer.Unity
                 // Use the GetAppSlots method to retrieve all slot IDs
                 slotIds = new List<string>(await manager.GetAppSlots());
             }
-            Debug.Log("slotIds: " + slotIds);
 
             if (slotIds == null || !slotIds.Any())
             {
@@ -579,12 +537,9 @@ namespace AssetLayer.Unity
                 {
                     continue;
                 }
-                Debug.Log("in for each: " + slotId);
                 SlotInfo slotInfo = await manager.GetSlotInfo(slotId);
-                Debug.Log("getting slot balance now");
                 var slotBalance = await manager.GetAssetBalance(slotId, true, true);
 
-                Debug.Log("slotinfo: " + slotInfo);
 
                 if (slotInfo != null)
                 {

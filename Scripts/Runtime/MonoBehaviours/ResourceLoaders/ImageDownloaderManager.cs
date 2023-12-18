@@ -9,7 +9,7 @@ namespace AssetLayer.Unity
 
     public class ImageDownloaderManager : MonoBehaviour
     {
-        public delegate void ImageDownloadedCallback(Texture2D texture);
+        public delegate void ImageDownloadedCallback(Texture2D texture, bool success = true);
 
         public void LoadImage(string url, ImageDownloadedCallback callback)
         {
@@ -20,40 +20,60 @@ namespace AssetLayer.Unity
             });
         }
 
-        private IEnumerator LoadImageCoroutine(string url, ImageDownloadedCallback callback)
+        private IEnumerator DownloadImage(string url, ImageDownloadedCallback callback)
         {
-            Debug.Log("image urls  loading: " + url);
-            if (String.IsNullOrEmpty(url) || !url.StartsWith("http"))
-            {
-                Debug.Log("malformed url for iamge");
-                yield return null;
-            }
             using (UnityWebRequest www = UnityWebRequestTexture.GetTexture(url))
             {
-                // Add headers to accept encoding types supported by libcurl
-                www.SetRequestHeader("Accept-Encoding", "gzip, deflate");
                 yield return www.SendWebRequest();
 
                 if (www.result == UnityWebRequest.Result.ConnectionError ||
                     www.result == UnityWebRequest.Result.ProtocolError)
                 {
-                    Debug.LogError($"[UnityWebRequest] Error downloading image from {url}. Error: {www.error}");
-                    callback?.Invoke(null);
+                    Debug.LogError($"Error downloading image from {url}. Error: {www.error}");
+                    callback?.Invoke(null, false);
                 }
                 else
                 {
                     try
                     {
                         Texture2D texture = DownloadHandlerTexture.GetContent(www);
-                        callback?.Invoke(texture);
+                        callback?.Invoke(texture, true);
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[UnityWebRequest] Failed to decode image from {url}. Exception: {e}");
-                        callback?.Invoke(null);
+                        Debug.LogError($"Failed to decode image from {url}. Exception: {e}");
+                        callback?.Invoke(null, false);
                     }
                 }
             }
         }
+
+
+        private IEnumerator LoadImageCoroutine(string url, ImageDownloadedCallback finalCallback)
+        {
+            if (String.IsNullOrEmpty(url) || !url.StartsWith("http"))
+            {
+                yield return null;
+            }
+            bool retry = false;
+
+            ImageDownloadedCallback intermediateCallback = (texture, success) =>
+            {
+                if (!success && !retry)
+                {
+                    retry = true;
+                    string uniqueUrl = url + "?nocache=" + DateTime.Now.Ticks.ToString();
+                    StartCoroutine(DownloadImage(uniqueUrl, finalCallback));
+                }
+                else
+                {
+                    finalCallback?.Invoke(texture, success);
+                }
+            };
+
+            yield return StartCoroutine(DownloadImage(url, intermediateCallback));
+        }
+
+
     }
 }
